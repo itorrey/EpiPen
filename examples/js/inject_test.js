@@ -1,0 +1,1 @@
+$axure('@injectStatus').text('script loaded!');

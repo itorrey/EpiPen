@@ -1,4 +1,3 @@
-// use this to isolate the scope
 (function () {
     $(window.document).ready(function () {
         $axure('@EpiInjector').each(function(index, value){
@@ -14,7 +13,6 @@
 
     function createTag(type, src, target) {
         var tag;
-
         if(!target) { target = "head"; }
 
         switch(type) {
@@ -30,7 +28,12 @@
                 tag = src;
                 break;
         }
-        $(tag).appendTo(target);
+
+        if(target.substring(0,1) == "@") {
+            $(tag).appendTo($axure(target).$());
+        } else {
+            $(tag).appendTo(target);
+        }
     }
 
 })();

@@ -1,0 +1,7 @@
+body {
+	background: #d1d1d1;
+}
+
+[data-label="injectStatus"] .text p span {
+	color:red;
+}
