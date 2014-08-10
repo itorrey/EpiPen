@@ -3,7 +3,7 @@ function do_custom(txt) {
 	//$axure('@target').$()[0].firstElementChild.value = val;
 	//var theJson = document.getElementById("axureEventReceiverDiv").innerHTML;
 	//eval(JSON.parse(theJson).data.epi);
-	console.log(window.$axure)
+	console.log($axure("@target").value());
 }
 
 function con(txt) {

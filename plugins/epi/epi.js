@@ -1,5 +1,4 @@
 epi = {
-
     currentEpiValue: "",
 
     // Get the data inside the EpiInjector object and create tags from it.
@@ -64,4 +63,12 @@ epi = {
 
 (function () {
     epi.init();
+
+    //Fix for axure's bug where this function doesn't return anything.
+    $axure.internal(function($ax){
+        $ax.public.getGlobalVariable = $ax.getGlobalVariable = function(name) {
+            return $ax.globalVariableProvider.getVariableValue(name);
+        };
+    });
 })();
+
