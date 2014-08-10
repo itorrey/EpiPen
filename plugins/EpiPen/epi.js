@@ -64,10 +64,29 @@ epi = {
 (function () {
     epi.init();
 
-    //Fix for axure's bug where this function doesn't return anything.
     $axure.internal(function($ax){
+        //Fix for axure's bug where this function doesn't return anything.
         $ax.public.getGlobalVariable = $ax.getGlobalVariable = function(name) {
             return $ax.globalVariableProvider.getVariableValue(name);
+        };
+
+        //Currently setting the text on an input widget throws an error that SetWidgetFormText doesn't exist.
+        // This shim fixes that error
+        SetWidgetFormText = function(elementIds, value) {
+            //Need to check if elementIds is a string or array. If it's a string this will never work.
+            if(typeof elementIds == "string") {
+                elementIds = Array(elementIds);
+            }
+            //This is the original function from Axure's expr.js
+            for(var i = 0; i < elementIds.length; i++) {
+                var elementId = elementIds[i];
+                var inputId = $ax.repeater.applySuffixToElementId(elementId, '_input');
+                var obj = $jobj(inputId);
+                if(obj.val() == value || (value == '' && $ax.placeholderManager.isActive(elementId))) return;
+                obj.val(value);
+                $ax.placeholderManager.updatePlaceholder(elementId, !value);
+                if($ax.event.HasTextChanged($ax.getObjectFromElementId(elementId))) $ax.event.TryFireTextChanged(elementId);
+            }
         };
     });
 })();

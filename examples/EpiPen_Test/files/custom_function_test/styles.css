@@ -4,7 +4,7 @@
   touch-action:none;
   position:static;
   left:auto;
-  width:540px;
+  width:369px;
   margin-left:0;
   margin-right:0;
   text-align:left;
@@ -141,47 +141,26 @@
 }
 #u10 {
   position:absolute;
-  left:391px;
-  top:170px;
-  width:149px;
-  height:30px;
-}
-#u10_img {
-  position:absolute;
   left:0px;
   top:0px;
-  width:149px;
-  height:30px;
+  width:50px;
+  height:50px;
 }
-#u11 {
-  position:absolute;
-  left:2px;
-  top:8px;
-  width:145px;
-  word-wrap:break-word;
-}
-#u12 {
+.u11 {
   position:absolute;
   left:0px;
   top:0px;
   width:50px;
   height:50px;
 }
-.u13 {
+.u11_img {
   position:absolute;
   left:0px;
   top:0px;
   width:50px;
   height:50px;
 }
-.u13_img {
-  position:absolute;
-  left:0px;
-  top:0px;
-  width:50px;
-  height:50px;
-}
-.u14 {
+.u12 {
   position:absolute;
   left:2px;
   top:17px;

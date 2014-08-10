@@ -1,3 +1,3 @@
 function do_custom(txt) {
-	console.log("Custom function");
+	$axure('@target').text($axure('@entry').value());
 }
