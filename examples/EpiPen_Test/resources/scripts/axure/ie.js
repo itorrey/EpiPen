@@ -2,13 +2,13 @@
 // ******* Internet Explorer MANAGER ******** //
 //this is to handle all the stupid IE Stuff
 $axure.internal(function($ax) {
-    if(!$.browser.msie) return;
+    if(!IE) return;
 
     var _ieColorManager = {};
-    if(Number($.browser.version) < 9) $ax.ieColorManager = _ieColorManager;
+    if(Number(BROWSER_VERSION) < 9) $ax.ieColorManager = _ieColorManager;
 
     var _applyIEFixedPosition = function() {
-        if(Number($.browser.version) >= 7) return;
+        if(Number(BROWSER_VERSION) >= 7) return;
 
         $axure(function(diagramObject) { return diagramObject.fixedVertical; }).$()
             .appendTo($('body'))
@@ -56,7 +56,7 @@ $axure.internal(function($ax) {
     };
 
     var _applyBackground = function() {
-        if(Number($.browser.version) >= 9) return;
+        if(Number(BROWSER_VERSION) >= 9) return;
 
         var styleChain = $ax.adaptive.getAdaptiveIdChain($ax.adaptive.currentViewId);
         var argb = _getArgb($ax.pageData.page, styleChain);
@@ -67,7 +67,7 @@ $axure.internal(function($ax) {
     };
 
     var _applyBackgroundToQuery = function(query) {
-        if(Number($.browser.version) >= 9) return;
+        if(Number(BROWSER_VERSION) >= 9) return;
 
         var styleChain = $ax.adaptive.getAdaptiveIdChain($ax.adaptive.currentViewId);
         query.each(function(obj, elementId) {
@@ -114,7 +114,7 @@ $axure.internal(function($ax) {
     };
 
     var _getColorFromArgb = function(a, r, g, b, allowWhite) {
-        if(Number($.browser.version) >= 9) return undefined;
+        if(Number(BROWSER_VERSION) >= 9) return undefined;
 
         //convert the color with alpha to a color with no alpha (assuming white background)
         r = Math.min((r * a) / 255 + 255 - a, 255);
@@ -162,7 +162,7 @@ $axure.internal(function($ax) {
     };
 
     var _applyIERotation = function() {
-        if(Number($.browser.version) >= 9) return;
+        if(Number(BROWSER_VERSION) >= 9) return;
 
         $axure(function(diagramObject) {
             return ((diagramObject.style.rotation && Math.abs(diagramObject.style.rotation) > 0.1)
@@ -215,7 +215,7 @@ $axure.internal(function($ax) {
     };
 
     var _fixIEStretchBackground = function() {
-        if(Number($.browser.version) >= 9) return;
+        if(Number(BROWSER_VERSION) >= 9) return;
         var pageStyle = $ax.adaptive.getPageStyle();
         if(!pageStyle.imageRepeat || pageStyle.imageRepeat == 'auto') return;
 
@@ -230,7 +230,7 @@ $axure.internal(function($ax) {
     };
 
     var _resizeIEBackground = function() {
-        if(Number($.browser.version) >= 9) return;
+        if(Number(BROWSER_VERSION) >= 9) return;
         //var page = $ax.pageData.page;
         var viewId = $ax.adaptive.currentViewId;
         var pageStyle = $ax.adaptive.getPageStyle();
@@ -288,7 +288,7 @@ $axure.internal(function($ax) {
     };
 
     var _fixInputSize = function() {
-        if(Number($.browser.version) >= 8 || window.navigator.userAgent.indexOf("Trident/4.0") > -1) return;
+        if(Number(BROWSER_VERSION) >= 8 || window.navigator.userAgent.indexOf("Trident/4.0") > -1) return;
         var inputs = $('input').not(':input[type=button], :input[type=submit], :input[type=radio], :input[type=checkbox]');
         inputs.each(function() {
             var $input = $(this);

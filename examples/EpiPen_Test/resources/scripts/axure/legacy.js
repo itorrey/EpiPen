@@ -22,7 +22,7 @@ $axure.internal(function($ax) {
     }
 
     $ax.legacy.SuppressBubble = function(event) {
-        if($.browser.msie) {
+        if(IE) {
             window.event.cancelBubble = true;
             window.event.returnValue = false;
         } else {
@@ -33,7 +33,7 @@ $axure.internal(function($ax) {
     };
 
     //    function InsertAfterBegin(dom, html) {
-    //        if(!$.browser.msie) {
+    //        if(!IE) {
     //            var phtml;
     //            var range = dom.ownerDocument.createRange();
     //            range.selectNodeContents(dom);
@@ -46,7 +46,7 @@ $axure.internal(function($ax) {
     //    }
 
     //    function InsertBeforeEnd(dom, html) {
-    //        if(!$.browser.msie) {
+    //        if(!IE) {
     //            var phtml;
     //            var range = dom.ownerDocument.createRange();
     //            range.selectNodeContents(dom);
@@ -151,7 +151,7 @@ $axure.internal(function($ax) {
             current = current.parent();
         }
         // Need to do this because of ie
-        if($.browser.msie) return window.document.documentElement;
+        if(IE) return window.document.documentElement;
         else return window.document.body;
     };
 

@@ -18,6 +18,8 @@ $axure.internal(function($ax) {
         || navigator.userAgent.match(/Tablet PC/i)
         || navigator.userAgent.match(/Windows Phone/i);
 
+    _supports.windowsMobile = navigator.userAgent.match(/Tablet PC/i) || navigator.userAgent.match(/Windows Phone/i);
+
     if(!check && _supports.mobile) {
         _supports.touchstart = false;
         _supports.touchmove = false;
@@ -131,12 +133,6 @@ $axure.internal(function($ax) {
 
     };
 
-    var _initilizeEventHandlers = function(query) {
-        query.filter(function(diagramObject) {
-            return diagramObject.interactionMap;
-        }).each(_attachEvents);
-    };
-
     var preventDefaultEvents = ['OnContextMenu', 'OnKeyUp', 'OnKeyDown'];
     var allowBubble = ['OnFocus', 'OnResize', 'OnMouseOut', 'OnMouseOver'];
 
@@ -221,7 +217,7 @@ $axure.internal(function($ax) {
 
         if(currentEvent && currentEvent.originalEvent) {
             currentEvent.originalEvent.handled = !synthetic && !bubble && allowBubble.indexOf(eventDescription) == -1;
-            currentEvent.originalEvent.donotdrag = currentEvent.donotdrag || (!bubble && eventDescription == 'OnMouseDown');
+            //currentEvent.originalEvent.donotdrag = currentEvent.donotdrag || (!bubble && eventDescription == 'OnMouseDown');
 
             // Prevent default if necessary
             if(currentEvent.originalEvent.handled && preventDefaultEvents.indexOf(eventDescription) != -1) {
@@ -240,7 +236,7 @@ $axure.internal(function($ax) {
         var $container = $("<div class='intcases' id='" + linksId + "'></div>");
 
         if(!_isEventSimulating(axEventObject)) {
-            var copy = $ax.deepCopy(eventInfo);
+            var copy = $ax.eventCopy(eventInfo);
             for(var i = 0; i < axEventObject.cases.length; i++) {
                 var $link = $("<div class='intcaselink'>" + axEventObject.cases[i].description + "</div>");
                 $link.click(function(j) {
@@ -295,9 +291,7 @@ $axure.internal(function($ax) {
         if($ax.document.configuration.linkStyle == "alwaysDisplayTargets") return true;
         if($ax.document.configuration.linkStyle == "neverDisplayTargets") return false;
         if(axEventObject.cases.length == 0) return false;
-        for(var i = 0; i < axEventObject.cases.length; i++) {
-            if(axEventObject.cases[i].condition) return false;
-        }
+        if(_isEventSimulating(axEventObject)) return false;
         if(axEventObject.cases.length >= 2) return true;
         return false;
     };
@@ -421,566 +415,531 @@ $axure.internal(function($ax) {
     };
 
     // TODO: It may be a good idea to split this into multiple functions, or at least pull out more similar functions into private methods
-    var _initializeObjectEvents = function(query) {
-        // Focus has to be done before on focus fires
-        // Set up focus
-        query.filter(function(dObj) {
-            return dObj.type == 'textArea' || dObj.type == 'textBox' || dObj.type == 'checkBox' || dObj.type == 'radioButton' ||
-                dObj.type == 'listBox' || dObj.type == 'comboBox' || dObj.type == 'button' || dObj.type == 'imageBox' ||
-                dObj.type == 'buttonShape' || dObj.type == 'flowShape' || dObj.type == 'treeNodeObject' || dObj.type == 'tableCell';
-        }).each(function(dObj, elementId) {
-            var focusObj = $jobj($ax.event.getFocusableWidgetOrChildId(elementId));
-            focusObj.focus(function() {
-                window.lastFocusedControl = elementId;
-            });
-        });
-
+    var _initializeObjectEvents = function (query) {
         // Must init the supressing eventing before the handlers, so that it has the ability to supress those events.
         initSuppressingEvents(query);
-        _initilizeEventHandlers(query);
-
-        //attach button shape alternate styles
-        var mouseFilter = query.filter(function(obj) {
-            return obj.type != 'hyperlink' && obj.type != 'dynamicPanel' && obj.type != 'richTextPanel' &&
-                obj.type != 'repeater' && obj.type != 'checkbox' && obj.type != 'radioButton' && obj.type != 'treeNodeObject';
-        });
-        mouseFilter.mouseenter(function() {
-            var elementId = this.id;
-            var parent = $ax.dynamicPanelManager.parentHandlesStyles(elementId);
-            if(parent) {
-                dynamicPanelMouseOver(parent.id);
-                if(parent.direct) return;
-            }
-            if($.inArray(elementId, _event.mouseOverIds) != -1) return;
-            _event.mouseOverIds[_event.mouseOverIds.length] = elementId;
-
-            if(elementId == _event.mouseOverObjectId) return;
-            _event.mouseOverObjectId = elementId;
-            $ax.style.SetWidgetHover(elementId, true);
-            var textId = $ax.style.GetTextIdFromShape(elementId);
-            if(textId) $ax.annotation.updateLinkLocations(textId);
-        }).mouseleave(function() {
-            var elementId = this.id;
-            var parent = $ax.dynamicPanelManager.parentHandlesStyles(elementId);
-            if(parent) {
-                dynamicPanelMouseLeave(parent.id);
-                if(parent.direct) return;
-            }
-            $ax.splice(_event.mouseOverIds, $.inArray(elementId, _event.mouseOverIds), 1);
-
-            if(elementId == _event.mouseOverObjectId) {
-                _event.mouseOverObjectId = '';
-            }
-            $ax.style.SetWidgetHover(elementId, false);
-            var textId = $ax.style.GetTextIdFromShape(elementId);
-            if(textId) $ax.annotation.updateLinkLocations(textId);
-        });
-
-        mouseFilter.bind($ax.features.eventNames.mouseDownName, function() {
-            var elementId = this.id;
-            var parent = $ax.dynamicPanelManager.parentHandlesStyles(elementId);
-            if(parent) {
-                dynamicPanelMouseDown(parent.id);
-                if(parent.direct) return;
-            }
-            _event.mouseDownObjectId = elementId;
-
-            $ax.style.SetWidgetMouseDown(this.id, true);
-            $ax.annotation.updateLinkLocations($ax.style.GetTextIdFromShape(elementId));
-        }).bind($ax.features.eventNames.mouseUpName, function() {
-            var elementId = this.id;
-            var parent = $ax.dynamicPanelManager.parentHandlesStyles(elementId);
-            if(parent) {
-                dynamicPanelMouseUp(parent.id);
-                if(parent.direct) return;
-            }
-            var mouseDownId = _event.mouseDownObjectId;
-            _event.mouseDownObjectId = '';
-            if(!$ax.style.ObjHasMouseDown(elementId)) return;
-
-            $ax.style.SetWidgetMouseDown(elementId, false);
-            $ax.annotation.updateLinkLocations($ax.style.GetTextIdFromShape(elementId));
-
-            //there used to be something we needed to make images click, because swapping out the images prevents the click
-            // this is a note that we can eventually delete.
-        });
-
-        // Initialize selected elements
-        query.filter(function(obj) {
-            return (obj.type == 'flowShape' || obj.type == 'buttonShape' || obj.type == 'imageBox' || obj.type == 'dynamicPanel') && obj.selected;
-        }).selected(true);
-
-        //initialize disabled elements
-        query.filter(function(obj) {
-            return (obj.type == 'flowShape' || obj.type == 'buttonShape' || obj.type == 'imageBox' || obj.type == 'dynamicPanel') && obj.disabled;
-        }).enabled(false);
-
-        if(OS_MAC && WEBKIT) {
-            query.filter(function(obj) { return obj.type == 'comboBox' && obj.disabled; }).each(function(obj, elementId) {
-                $jobj($ax.INPUT(elementId)).css('color', 'grayText');
-            });
-        };
-
-        // Initialize Placeholders. Right now this is text boxes and text areas.
-        // Also, the assuption is being made that these widgets with the placeholder, have no other styles (this may change...)
-        query.filter(function(obj) {
-            var hasPlaceholder = obj.placeholderText == '' ? true : Boolean(obj.placeholderText);
-            return (obj.type == 'textArea' || obj.type == 'textBox') && hasPlaceholder;
-        }).each(function(diagramObject, elementId) {
-            // This is needed to initialize the placeholder state
-            $jobj($ax.INPUT(elementId)).bind('keydown', function() {
-                var id = this.id;
-                var inputIndex = id.indexOf('_input');
-                if(inputIndex == -1) return;
-                var inputId = id.substring(0, inputIndex);
-
-                if(!$ax.placeholderManager.isActive(inputId)) return;
-                $ax.placeholderManager.updatePlaceholder(inputId, false, true);
-            }).bind('keyup', function() {
-                var id = this.id;
-                var inputIndex = id.indexOf('_input');
-                if(inputIndex == -1) return;
-                var inputId = id.substring(0, inputIndex);
-
-                if($ax.placeholderManager.isActive(inputId)) return;
-                if(!$jobj(id).val()) {
-                    $ax.placeholderManager.updatePlaceholder(inputId, true);
-                    $ax.placeholderManager.moveCaret(id, 0);
-                }
-            }).bind('focus', function() {
-                $ax.placeholderManager.moveCaret(this.id);
-            }).bind('mousedown', function() {
-                $ax.placeholderManager.moveCaret(this.id);
-            }).bind('mouseup', function() {
-                $ax.placeholderManager.moveCaret(this.id);
-            }).bind('blur', function() {
-                var id = this.id;
-                var inputIndex = id.indexOf('_input');
-                if(inputIndex == -1) return;
-                var inputId = id.substring(0, inputIndex);
-
-                if($jobj(id).val()) return;
-                $ax.placeholderManager.updatePlaceholder(inputId, true);
-            });
-
-            $ax.placeholderManager.registerPlaceholder(elementId, diagramObject.placeholderText, $jobj($ax.INPUT(elementId)).attr('type') == 'password');
-            $ax.placeholderManager.updatePlaceholder(elementId, !($jobj($ax.repeater.applySuffixToElementId(elementId, '_input')).val()));
-        });
-
-        // Initialize assigned submit buttons
-        query.filter(function(dObj) { return dObj.submitButton; }).each(function(dObj, elementId) {
-            $('#' + elementId).keyup(function(e) {
-                if(e.keyCode == '13') {
-                    var scriptId = $ax.repeater.getScriptIdFromElementId(elementId);
-                    var path = $ax.deepCopy(dObj.submitButton.path);
-                    path[path.length] = dObj.submitButton.id;
-                    var itemNum = $ax.repeater.getItemIdFromElementId(elementId);
-                    var submitId = $ax.getScriptIdFromPath(path, scriptId);
-
-                    if(itemNum && $ax.getParentRepeaterFromScriptId(submitId) == $ax.getParentRepeaterFromScriptId(scriptId)) {
-                        submitId = $ax.repeater.createElementId(submitId, itemNum);
-                    }
-                    var inputId = $ax.INPUT(submitId);
-                    if($jobj(inputId).length) submitId = inputId;
-
-                    $ax.setjBrowserEvent(e);
-                    $ax.event.fireClick(submitId);
-                }
-            }).keydown(function(e) {
-                if(e.keyCode == '13') {
-                    e.preventDefault();
-                }
-            });
-        });
-
-        // Don't drag after mousing down on a plain text object
-        query.filter(function(obj) {
-            return obj.type == 'textArea' || obj.type == 'textBox' || obj.type == 'listBox' || obj.type == 'comboBox' || obj.type == 'checkBox' || obj.type == 'radioButton';
-        }).bind($ax.features.eventNames.mouseDownName, function(event) {
-            event.originalEvent.donotdrag = true;
-        });
-
-        if($ax.features.supports.mobile) {
-            query.bind($ax.features.eventNames.mouseDownName, function() { _setCanClick(true); });
-
-            query.filter(function(obj) {
-                return obj.type == 'dynamicPanel';
-            }).$().scroll(function() { _setCanClick(false); });
-        }
-
-        //initialize tree node cursors to default so they will override their parent
-        query.filter(function(obj) {
-            return obj.type == 'treeNodeObject' && !(obj.interactionMap && obj.interactionMap.onClick);
-        }).each(function(obj, id) {
-            $jobj(id).css('cursor', 'default');
-        });
-
-        //initialize widgets that are clickable to have the pointer over them when hovering
-        query.filter(function(obj) {
-            return obj.interactionMap && obj.interactionMap.onClick;
-        }).each(function(obj, id) {
-            var jobj = $jobj(id);
-            if(jobj) jobj.css('cursor', 'pointer');
-        });
-
-        // TODO: not sure if we need this. It appears to be working without
-        //initialize panels for DynamicPanels
-        query.filter(function(obj) {
-            return (obj.type == 'dynamicPanel');
-        }).$().children().each(function() {
-            var parts = this.id.split('_');
-            var state = parts[parts.length - 1].substring(5);
-            if(state != 0) $ax.visibility.SetVisible(this, false);
-        });
-
-        //initialize TreeNodes
-        query.filter(function(obj) {
-            return (obj.type == 'treeNodeObject');
-        }).each(function(otehnutohe, id) {
-            //var id = ids[index];
-            var obj = $jobj(id);
-            if(obj.hasClass('treeroot')) return;
-
-            var childrenId = id + '_children';
-            var children = obj.children('[id="' + childrenId + '"]:first');
-            if(children.length > 0) {
-                var plusMinusId = 'u' + (parseInt($ax.repeater.getScriptIdFromElementId(id).substring(1)) + 1);
-                var itemId = $ax.repeater.getItemIdFromElementId(id);
-                if(itemId) plusMinusId = $ax.repeater.createElementId(plusMinusId, itemId);
-                if(!$jobj(plusMinusId).hasClass('ax_image')) plusMinusId = '';
-                $ax.tree.InitializeTreeNode(id, plusMinusId, childrenId);
-            }
-            obj.click(function() { $ax.tree.SelectTreeNode(id, true); });
-        });
-
-        //initialize submenus
-        query.filter(function(obj) {
-            return (obj.type == 'menuObject');
-        }).each(function(obj, elementId) {
-            var jobj = $jobj(elementId);
-            if(jobj.hasClass('sub_menu')) {
-                var tableCellElementId = $ax.getElementIdFromPath([obj.parentCellId], { relativeTo: elementId });
-                $ax.menu.InitializeSubmenu(elementId, tableCellElementId);
-            }
-        });
-
-
-        // Attach handles for dynamic panels that propagate styles to inner items.
-        query.filter(function(obj) {
-            return obj.type == 'dynamicPanel' && obj.propagate;
-        }).mouseenter(function() {
-            var elementId = this.id;
-            dynamicPanelMouseOver(elementId);
-        }).mouseleave(function() {
-            var elementId = this.id;
-            dynamicPanelMouseLeave(elementId);
-        }).bind($ax.features.eventNames.mouseDownName, function() {
-            var elementId = this.id;
-            dynamicPanelMouseDown(elementId);
-        }).bind($ax.features.eventNames.mouseUpName, function() {
-            var elementId = this.id;
-            dynamicPanelMouseUp(elementId);
-        });
-
-        // These are the dynamic panel functions for propagating rollover styles and mouse down styles to inner objects
-        var dynamicPanelMouseOver = function(elementId, fromChild) {
-            var parent = $ax.dynamicPanelManager.parentHandlesStyles(elementId);
-            if(parent) {
-                dynamicPanelMouseOver(parent.id, true);
-                if(parent.direct) return;
-            }
-            if($.inArray(elementId, _event.mouseOverIds) != -1) return;
-            // If this event is coming from a child, don't mark that it's actually entered.
-            // Only mark that this has been entered if this event has naturally been triggered. (For reason see mouseleave)
-            if(!fromChild) _event.mouseOverIds[_event.mouseOverIds.length] = elementId;
-            if(elementId == _event.mouseOverObjectId) return;
-            _event.mouseOverObjectId = elementId;
-            $ax.dynamicPanelManager.propagateMouseOver(elementId, true);
-        };
-        var dynamicPanelMouseLeave = function(elementId, fromChild) {
-            var parent = $ax.dynamicPanelManager.parentHandlesStyles(elementId);
-            if(parent) {
-                dynamicPanelMouseLeave(parent.id, true);
-                if(parent.direct) return;
-            }
-            var index = $.inArray(elementId, _event.mouseOverIds);
-            // If index != -1, this has been natuarally entered. If naturally entered, then leaving child should not trigger leaving,
-            //  but instead wait for natural mouse leave. If natural mouse enter never triggered, natural mouse leave won't so do this now.
-            if((index != -1) && fromChild) return;
-            $ax.splice(_event.mouseOverIds, index, 1);
-
-            if(elementId == _event.mouseOverObjectId) {
-                _event.mouseOverObjectId = '';
-            }
-            $ax.dynamicPanelManager.propagateMouseOver(elementId, false);
-        };
-        var dynamicPanelMouseDown = function(elementId) {
-            var parent = $ax.dynamicPanelManager.parentHandlesStyles(elementId);
-            if(parent) {
-                dynamicPanelMouseDown(parent.id);
-                if(parent.direct) return;
-            }
-            _event.mouseDownObjectId = elementId;
-            $ax.dynamicPanelManager.propagateMouseDown(elementId, true);
-        };
-        var dynamicPanelMouseUp = function(elementId) {
-            var parent = $ax.dynamicPanelManager.parentHandlesStyles(elementId);
-            if(parent) {
-                dynamicPanelMouseUp(parent.id);
-                if(parent.direct) return;
-            }
-            _event.mouseDownObjectId = '';
-            $ax.dynamicPanelManager.propagateMouseDown(elementId, false);
-        };
-
-        //attach handlers for button shape and tree node mouse over styles
-        // TODO: Can this really be removed? Trees seem to work with out (the generic hover case works for it).
-        //        query.filter(function(obj) {
-        //            return obj.type == 'buttonShape' && obj.parent.type == 'treeNodeObject' &&
-        //                    obj.parent.style && obj.parent.style.stateStyles &&
-        //                        obj.parent.style.stateStyles.mouseOver;
-        //        }).mouseenter(function() {
-        //            $ax.style.SetWidgetHover(this.id, true);
-        //        }).mouseleave(function() {
-        //            $ax.style.SetWidgetHover(this.id, false);
-        //        });
-
-        //handle treeNodeObject events and prevent them from bubbling up. this is necessary because otherwise
-        //both a sub menu and it's parent would get a click
-        query.filter(function(obj) {
-            return obj.type == 'treeNodeObject';
-        }).click(function() {
-            //todo -- this was bubbling, but then selecting a child tree node would bubble and select the parent (don't know if there is a better way)
-            _fireObjectEvent(this.id, 'click', arguments);
-            return false;
-        }).$().each(function() {
-            if(!this.style.cursor) {
-                this.style.cursor = 'default';
-            }
-        });
-
-        // Synthetic events
-
-        // Attach dynamic panel synthetic drag and swipe events
-        query.filter(function(diagramObject) {
-            if(diagramObject.type != "dynamicPanel") return false;
-            var map = diagramObject.interactionMap;
-            return map && (
-                map.onDragStart || map.onDrag ||
-                    map.onDragDrop || map.onSwipeLeft || map.onSwipeRight || map.onSwipeUp || map.onSwipeDown);
-        }).each(function(diagramObject, elementId) {
-            $('#' + elementId)
-                .bind($ax.features.eventNames.mouseDownName, function(e) { $ax.drag.StartDragWidget(e.originalEvent, elementId); });
-        });
-
-        // Attach dynamic panel synthetic scroll event
-        query.filter(function(diagramObject) {
-            if(diagramObject.type != 'dynamicPanel') return false;
-            var map = diagramObject.interactionMap;
-            return map && map.onScroll;
-        }).each(function(diagramObject, elementId) {
-            var diagrams = diagramObject.diagrams;
-            for(var i = 0; i < diagrams.length; i++) {
-                var panelId = $ax.repeater.applySuffixToElementId(elementId, '_state' + i);
-                (function(id) {
-                    _attachDefaultObjectEvent($('#' + id), elementId, 'scroll', function(e) {
-                        $ax.setjBrowserEvent(e);
-                        _handleEvent(elementId, $ax.getEventInfoFromEvent($ax.getjBrowserEvent(), false, elementId), diagramObject.interactionMap.onScroll);
-                    });
-                })(panelId);
-            }
-        });
-
-        // Attach synthetic hover event
-        query.filter(function(diagramObject) {
-            var map = diagramObject.interactionMap;
-            return map && map.onMouseHover;
-        }).each(function(diagramObject, elementId) {
-            var MIN_HOLD_TIME = 1000;
-
-            // So when the timeout fires, you know whether it is the same mouseenter that is active or not.
-            var mouseCount = 0;
-            // Update eventInfo regularly, so position is accurate.
-            var eventInfo;
-
-            $('#' + elementId).mouseenter(function(e) {
-                $ax.setjBrowserEvent(e);
-                eventInfo = $ax.getEventInfoFromEvent($ax.getjBrowserEvent(), false, elementId);
-                (function(currCount) {
-                    window.setTimeout(function() {
-                        if(currCount == mouseCount) _raiseSyntheticEvent(elementId, 'onMouseHover', false, eventInfo, true);
-                    }, MIN_HOLD_TIME);
-                })(mouseCount);
-            }).mouseleave(function(e) {
-                $ax.setjBrowserEvent(e);
-                mouseCount++;
-            }).mousemove(function(e) {
-                $ax.setjBrowserEvent(e);
-                eventInfo = $ax.getEventInfoFromEvent($ax.getjBrowserEvent(), false, elementId);
-            });
-        });
-
-        // Attach synthetic tap and hold event.
-        query.filter(function(diagramObject) {
-            var map = diagramObject.interactionMap;
-            return map && map.onLongClick;
-        }).each(function(diagramObject, elementId) {
-            var MIN_HOLD_TIME = 750;
-
-            // So when the timeout fires, you know whether it is the same mousedown that is active or not.
-            var mouseCount = 0;
-
-            $('#' + elementId).bind($ax.features.eventNames.mouseDownName, function(e) {
-                (function(currCount) {
-                    $ax.setjBrowserEvent(e);
-                    var eventInfo = $ax.getEventInfoFromEvent($ax.getjBrowserEvent(), false, elementId);
-                    window.setTimeout(function() {
-                        if(currCount == mouseCount) _raiseSyntheticEvent(elementId, 'onLongClick', false, eventInfo, true);
-                    }, MIN_HOLD_TIME);
-                    if(e.preventDefault) e.preventDefault();
-                })(mouseCount);
-            }).bind($ax.features.eventNames.mouseUpName, function(e) {
-                $ax.setjBrowserEvent(e);
-                mouseCount++;
-            });
-        });
-
-        // Attach synthetic onSelectionChange event to droplist and listbox elements
-        query.filter(function(diagramObject) {
-            return $ax.event.HasSelectionChanged(diagramObject);
-        }).each(function(diagramObject, elementId) {
-            $('#' + elementId).bind('change', function(e) {
-                $ax.setjBrowserEvent(e);
-                _raiseSyntheticEvent(elementId, 'onSelectionChange');
-            });
-        });
-
-        // Highjack key up and key down to keep track of state of keyboard.
-        _event.initKeyEvents(query.$());
         
-        // Attach synthetic onTextChange event to textbox and textarea elements
-        query.filter(function(diagramObject) {
-            return $ax.event.HasTextChanged(diagramObject);
-        }).each(function(diagramObject, elementId) {
-            var element = $jobj($ax.INPUT(elementId));
-            $ax.updateElementText(elementId, element.val());
-            //Key down needed because when holding a key down, key up only fires once, but keydown fires repeatedly.
-            //Key up because last mouse down will only show the state before the last character.
-            element.bind('keydown', function(e) {
-                $ax.setjBrowserEvent(e);
-                $ax.event.TryFireTextChanged(elementId);
-            }).bind('keyup', function(e) {
-                $ax.setjBrowserEvent(e);
-                $ax.event.TryFireTextChanged(elementId);
-            });
-            //.change(function() { $ax.event.TryFireTextChanged(elementId); });
-        });
+        query.each(function(dObj, elementId) {
+            var $element = $jobj(elementId);
 
-        // Attach synthetic onCheckedChange event to radiobutton and checkbox elements
-        query.filter(function(diagramObject) {
-            return diagramObject.type == 'checkbox' || diagramObject.type == 'radioButton';
-        }).each(function(diagramObject, elementId) {
-            var input = $jobj($ax.INPUT(elementId));
-            if(diagramObject.type == 'radioButton' && input.prop('checked')) {
-                $ax.updateRadioButtonSelected(input.attr('name'), elementId);
+            // Focus has to be done before on focus fires
+            // Set up focus
+            if(dObj.type == 'textArea' || dObj.type == 'textBox' || dObj.type == 'checkBox' || dObj.type == 'radioButton' ||
+                dObj.type == 'listBox' || dObj.type == 'comboBox' || dObj.type == 'button' || dObj.type == 'imageBox' ||
+                dObj.type == 'buttonShape' || dObj.type == 'flowShape' || dObj.type == 'treeNodeObject' || dObj.type == 'tableCell') {
+                var focusObj = $jobj($ax.event.getFocusableWidgetOrChildId(elementId));
+                focusObj.focus(function() {
+                    window.lastFocusedControl = elementId;
+                });
             }
 
-            $jobj(elementId).bind('change', function(e) {
-                $ax.setjBrowserEvent(e);
-                _tryFireCheckedChanged(elementId, true);
-            });
-        });
 
-        // Mobile events
-        _event.initMobileEvents(function(initTap) {
-            query.filter(function(diagramObject) {
-                var map = diagramObject.interactionMap;
-                return map && (map.onClick || map.onDoubleClick);
-            }).each(function(diagramObject, elementId) {
-                initTap('#' + elementId, elementId);
-            });
-        }, function(initMove) {
-            query.filter(function(diagramObject) {
-                var map = diagramObject.interactionMap;
-                return map && map.onMouseMove;
-            }).each(function(diagramObject, elementId) {
-                initMove('#' + elementId, elementId);
-            });
-        });
+            // [MAS: Supressing events were here]
+            if(dObj.interactionMap) {
+                _attachEvents(dObj, elementId);
+            };
 
-        //attach link alternate styles
-        query.filter(function(obj) {
-            return obj.type == 'hyperlink';
-        }).mouseenter(function() {
-            var elementId = this.id;
-            if(_event.mouseOverIds.indexOf(elementId) != -1) return true;
-            _event.mouseOverIds[_event.mouseOverIds.length] = elementId;
-            var mouseOverObjectId = _event.mouseOverObjectId;
-            if(mouseOverObjectId && $ax.style.IsWidgetDisabled(mouseOverObjectId)) return true;
 
-            $ax.style.SetLinkHover(elementId);
+            //attach button shape alternate styles
+            var needsMouseFilter = dObj.type != 'hyperlink' && dObj.type != 'dynamicPanel' && dObj.type != 'richTextPanel' &&
+                dObj.type != 'repeater' && dObj.type != 'checkbox' && dObj.type != 'radioButton' && dObj.type != 'treeNodeObject';
+            if(needsMouseFilter) {
+                $element.mouseenter(function() {
+                    var elementId = this.id;
+                    var parent = $ax.dynamicPanelManager.parentHandlesStyles(elementId);
+                    if(parent) {
+                        dynamicPanelMouseOver(parent.id);
+                        if(parent.direct) return;
+                    }
+                    if($.inArray(elementId, _event.mouseOverIds) != -1) return;
+                    _event.mouseOverIds[_event.mouseOverIds.length] = elementId;
 
-            var bubble = _fireObjectEvent(elementId, 'mouseenter', arguments);
+                    if(elementId == _event.mouseOverObjectId) return;
+                    _event.mouseOverObjectId = elementId;
+                    $ax.style.SetWidgetHover(elementId, true);
+                    var textId = $ax.style.GetTextIdFromShape(elementId);
+                    if(textId) $ax.annotation.updateLinkLocations(textId);
+                }).mouseleave(function() {
+                    var elementId = this.id;
+                    var parent = $ax.dynamicPanelManager.parentHandlesStyles(elementId);
+                    if(parent) {
+                        dynamicPanelMouseLeave(parent.id);
+                        if(parent.direct) return;
+                    }
+                    $ax.splice(_event.mouseOverIds, $.inArray(elementId, _event.mouseOverIds), 1);
 
-            $ax.annotation.updateLinkLocations($ax.style.GetTextIdFromLink(elementId));
-            return bubble;
-        }).mouseleave(function() {
-            var elementId = this.id;
-            $ax.splice(_event.mouseOverIds, _event.mouseOverIds.indexOf(elementId), 1);
-            var mouseOverObjectId = _event.mouseOverObjectId;
-            if(mouseOverObjectId && $ax.style.IsWidgetDisabled(mouseOverObjectId)) return true;
+                    if(elementId == _event.mouseOverObjectId) {
+                        _event.mouseOverObjectId = '';
+                    }
+                    $ax.style.SetWidgetHover(elementId, false);
+                    var textId = $ax.style.GetTextIdFromShape(elementId);
+                    if(textId) $ax.annotation.updateLinkLocations(textId);
+                });
 
-            $ax.style.SetLinkNotHover(elementId);
+                $element.bind($ax.features.eventNames.mouseDownName, function() {
+                    var elementId = this.id;
+                    var parent = $ax.dynamicPanelManager.parentHandlesStyles(elementId);
+                    if(parent) {
+                        dynamicPanelMouseDown(parent.id);
+                        if(parent.direct) return;
+                    }
+                    _event.mouseDownObjectId = elementId;
 
-            var bubble = _fireObjectEvent(elementId, 'mouseleave', arguments);
+                    $ax.style.SetWidgetMouseDown(this.id, true);
+                    $ax.annotation.updateLinkLocations($ax.style.GetTextIdFromShape(elementId));
+                }).bind($ax.features.eventNames.mouseUpName, function() {
+                    var elementId = this.id;
+                    var parent = $ax.dynamicPanelManager.parentHandlesStyles(elementId);
+                    if(parent) {
+                        dynamicPanelMouseUp(parent.id);
+                        if(parent.direct) return;
+                    }
+                    var mouseDownId = _event.mouseDownObjectId;
+                    _event.mouseDownObjectId = '';
+                    if(!$ax.style.ObjHasMouseDown(elementId)) return;
 
-            $ax.annotation.updateLinkLocations($ax.style.GetTextIdFromLink(elementId));
-            return bubble;
-        }).bind($ax.features.eventNames.mouseDownName, function() {
-            var elementId = this.id;
-            var mouseOverObjectId = _event.mouseOverObjectId;
-            if($ax.style.IsWidgetDisabled(mouseOverObjectId)) return undefined;
+                    $ax.style.SetWidgetMouseDown(elementId, false);
+                    $ax.annotation.updateLinkLocations($ax.style.GetTextIdFromShape(elementId));
 
-            if(mouseOverObjectId) $ax.style.SetWidgetMouseDown(mouseOverObjectId, true);
-            $ax.style.SetLinkMouseDown(elementId);
+                    //there used to be something we needed to make images click, because swapping out the images prevents the click
+                    // this is a note that we can eventually delete.
+                });
 
-            $ax.annotation.updateLinkLocations($ax.style.GetTextIdFromLink(elementId));
-
-            return false;
-        }).bind($ax.features.eventNames.mouseUpName, function() {
-            var elementId = this.id;
-            var mouseOverObjectId = _event.mouseOverObjectId;
-            if(mouseOverObjectId && $ax.style.IsWidgetDisabled(mouseOverObjectId)) return;
-
-            if(mouseOverObjectId) $ax.style.SetWidgetMouseDown(mouseOverObjectId, false);
-            $ax.style.SetLinkNotMouseDown(elementId);
-
-            $ax.annotation.updateLinkLocations($ax.style.GetTextIdFromLink(elementId));
-
-        }).click(function() {
-            var elementId = this.id;
-            var mouseOverObjectId = _event.mouseOverObjectId;
-            if(mouseOverObjectId && $ax.style.IsWidgetDisabled(mouseOverObjectId)) return undefined;
-
-            return _fireObjectEvent(elementId, 'click', arguments);
-        });
-
-        // Init inline frames
-        query.filter(function(obj) {
-            return obj.type == 'inlineFrame';
-        }).each(function(obj, elementId) {
-            var target = obj.target;
-            var url = '';
-            if(target.includeVariables && target.url) {
-                var origSrc = target.url;
-                url = origSrc.toLowerCase().indexOf('http://') == -1 ? $ax.globalVariableProvider.getLinkUrl(origSrc) : origSrc;
-
-            } else if(target.urlLiteral) {
-                url = $ax.expr.evaluateExpr(target.urlLiteral, $ax.getEventInfoFromEvent(undefined, true, elementId), true);
             }
-            if(url) $jobj($ax.INPUT(elementId)).attr('src', url);
+
+            var $axElement = undefined;
+            // Initialize selected elements
+            if((dObj.type == 'flowShape' || dObj.type == 'buttonShape' || dObj.type == 'imageBox' || dObj.type == 'dynamicPanel') && dObj.selected) {
+                if(!$axElement) $axElement = $ax('#' + elementId);
+                $axElement.selected(true);
+            }
+
+            //initialize disabled elements
+            if((dObj.type == 'flowShape' || dObj.type == 'buttonShape' || dObj.type == 'imageBox' || dObj.type == 'dynamicPanel') && dObj.disabled) {
+                if(!$axElement) $axElement = $ax('#' + elementId);
+                $axElement.enabled(false);
+            }
+
+            if(OS_MAC && WEBKIT) {
+                if(dObj.type == 'comboBox' && dObj.disabled) {
+                    $jobj($ax.INPUT(elementId)).css('color', 'grayText');
+                }
+            };
+
+            // Initialize Placeholders. Right now this is text boxes and text areas.
+            // Also, the assuption is being made that these widgets with the placeholder, have no other styles (this may change...)
+            var hasPlaceholder = dObj.placeholderText == '' ? true : Boolean(dObj.placeholderText);
+            if((dObj.type == 'textArea' || dObj.type == 'textBox') && hasPlaceholder) {
+                // This is needed to initialize the placeholder state
+                $jobj($ax.INPUT(elementId)).bind('keydown', function() {
+                    var id = this.id;
+                    var inputIndex = id.indexOf('_input');
+                    if(inputIndex == -1) return;
+                    var inputId = id.substring(0, inputIndex);
+
+                    if(!$ax.placeholderManager.isActive(inputId)) return;
+                    $ax.placeholderManager.updatePlaceholder(inputId, false, true);
+                }).bind('keyup', function() {
+                    var id = this.id;
+                    var inputIndex = id.indexOf('_input');
+                    if(inputIndex == -1) return;
+                    var inputId = id.substring(0, inputIndex);
+
+                    if($ax.placeholderManager.isActive(inputId)) return;
+                    if(!$jobj(id).val()) {
+                        $ax.placeholderManager.updatePlaceholder(inputId, true);
+                        $ax.placeholderManager.moveCaret(id, 0);
+                    }
+                }).bind('focus', function() {
+                    $ax.placeholderManager.moveCaret(this.id);
+                }).bind('mousedown', function() {
+                    $ax.placeholderManager.moveCaret(this.id);
+                }).bind('mouseup', function() {
+                    $ax.placeholderManager.moveCaret(this.id);
+                }).bind('blur', function() {
+                    var id = this.id;
+                    var inputIndex = id.indexOf('_input');
+                    if(inputIndex == -1) return;
+                    var inputId = id.substring(0, inputIndex);
+
+                    if($jobj(id).val()) return;
+                    $ax.placeholderManager.updatePlaceholder(inputId, true);
+                });
+
+                $ax.placeholderManager.registerPlaceholder(elementId, dObj.placeholderText, $jobj($ax.INPUT(elementId)).attr('type') == 'password');
+                $ax.placeholderManager.updatePlaceholder(elementId, !($jobj($ax.repeater.applySuffixToElementId(elementId, '_input')).val()));
+            }
+
+            // Initialize assigned submit buttons
+            if(dObj.submitButton) {
+                $element.keyup(function(e) {
+                    if(e.keyCode == '13') {
+                        var scriptId = $ax.repeater.getScriptIdFromElementId(elementId);
+                        var path = $ax.deepCopy(dObj.submitButton.path);
+                        path[path.length] = dObj.submitButton.id;
+                        var itemNum = $ax.repeater.getItemIdFromElementId(elementId);
+                        var submitId = $ax.getScriptIdFromPath(path, scriptId);
+
+                        if(itemNum && $ax.getParentRepeaterFromScriptId(submitId) == $ax.getParentRepeaterFromScriptId(scriptId)) {
+                            submitId = $ax.repeater.createElementId(submitId, itemNum);
+                        }
+                        var inputId = $ax.INPUT(submitId);
+                        if($jobj(inputId).length) submitId = inputId;
+
+                        $ax.setjBrowserEvent(e);
+                        $ax.event.fireClick(submitId);
+                    }
+                }).keydown(function(e) {
+                    if(e.keyCode == '13') {
+                        e.preventDefault();
+                    }
+                });
+            }
+
+            // Don't drag after mousing down on a plain text object
+            if(dObj.type == 'textArea' || dObj.type == 'textBox' || dObj.type == 'listBox' || dObj.type == 'comboBox' || dObj.type == 'checkBox' || dObj.type == 'radioButton') {
+                $element.bind($ax.features.eventNames.mouseDownName, function(event) {
+                    event.originalEvent.donotdrag = true;
+                });
+            }
+
+            if($ax.features.supports.mobile) {
+                $element.bind($ax.features.eventNames.mouseDownName, function() { _setCanClick(true); });
+
+                if(dObj.type == 'dynamicPanel') {
+                    $element.scroll(function() { _setCanClick(false); });
+                }
+            }
+
+            //initialize tree node cursors to default so they will override their parent
+            if(dObj.type == 'treeNodeObject' && !(dObj.interactionMap && dObj.interactionMap.onClick)) {
+                $element.css('cursor', 'default');
+            }
+
+            //initialize widgets that are clickable to have the pointer over them when hovering
+            if(dObj.interactionMap && dObj.interactionMap.onClick) {
+                if($element) $element.css('cursor', 'pointer');
+            }
+
+            // TODO: not sure if we need this. It appears to be working without
+            //initialize panels for DynamicPanels
+            if(dObj.type == 'dynamicPanel') {
+                $element.children().each(function() {
+                    var parts = this.id.split('_');
+                    var state = parts[parts.length - 1].substring(5);
+                    if(state != 0) $ax.visibility.SetVisible(this, false);
+                });
+            }
+
+            //initialize TreeNodes
+            if(dObj.type == 'treeNodeObject') {
+                if($element.hasClass('treeroot')) return;
+
+                var childrenId = elementId + '_children';
+                var children = $element.children('[id="' + childrenId + '"]:first');
+                if(children.length > 0) {
+                    var plusMinusId = 'u' + (parseInt($ax.repeater.getScriptIdFromElementId(elementId).substring(1)) + 1);
+                    var itemId = $ax.repeater.getItemIdFromElementId(elementId);
+                    if(itemId) plusMinusId = $ax.repeater.createElementId(plusMinusId, itemId);
+                    if(!$jobj(plusMinusId).hasClass('ax_image')) plusMinusId = '';
+                    $ax.tree.InitializeTreeNode(elementId, plusMinusId, childrenId);
+                }
+                $element.click(function() { $ax.tree.SelectTreeNode(elementId, true); });
+            }
+
+            //initialize submenus
+            if(dObj.type == 'menuObject') {
+                if($element.hasClass('sub_menu')) {
+                    var tableCellElementId = $ax.getElementIdFromPath([dObj.parentCellId], { relativeTo: elementId });
+                    $ax.menu.InitializeSubmenu(elementId, tableCellElementId);
+                }
+            }
+
+            // Attach handles for dynamic panels that propagate styles to inner items.
+            if(dObj.type == 'dynamicPanel' && dObj.propagate) {
+                $element.mouseenter(function() {
+                    var elementId = this.id;
+                    dynamicPanelMouseOver(elementId);
+                }).mouseleave(function() {
+                    var elementId = this.id;
+                    dynamicPanelMouseLeave(elementId);
+                }).bind($ax.features.eventNames.mouseDownName, function() {
+                    var elementId = this.id;
+                    dynamicPanelMouseDown(elementId);
+                }).bind($ax.features.eventNames.mouseUpName, function() {
+                    var elementId = this.id;
+                    dynamicPanelMouseUp(elementId);
+                });
+            }
+
+            // These are the dynamic panel functions for propagating rollover styles and mouse down styles to inner objects
+            var dynamicPanelMouseOver = function(elementId, fromChild) {
+                var parent = $ax.dynamicPanelManager.parentHandlesStyles(elementId);
+                if(parent) {
+                    dynamicPanelMouseOver(parent.id, true);
+                    if(parent.direct) return;
+                }
+                if($.inArray(elementId, _event.mouseOverIds) != -1) return;
+                // If this event is coming from a child, don't mark that it's actually entered.
+                // Only mark that this has been entered if this event has naturally been triggered. (For reason see mouseleave)
+                if(!fromChild) _event.mouseOverIds[_event.mouseOverIds.length] = elementId;
+                if(elementId == _event.mouseOverObjectId) return;
+                _event.mouseOverObjectId = elementId;
+                $ax.dynamicPanelManager.propagateMouseOver(elementId, true);
+            };
+            var dynamicPanelMouseLeave = function(elementId, fromChild) {
+                var parent = $ax.dynamicPanelManager.parentHandlesStyles(elementId);
+                if(parent) {
+                    dynamicPanelMouseLeave(parent.id, true);
+                    if(parent.direct) return;
+                }
+                var index = $.inArray(elementId, _event.mouseOverIds);
+                // If index != -1, this has been natuarally entered. If naturally entered, then leaving child should not trigger leaving,
+                //  but instead wait for natural mouse leave. If natural mouse enter never triggered, natural mouse leave won't so do this now.
+                if((index != -1) && fromChild) return;
+                $ax.splice(_event.mouseOverIds, index, 1);
+
+                if(elementId == _event.mouseOverObjectId) {
+                    _event.mouseOverObjectId = '';
+                }
+                $ax.dynamicPanelManager.propagateMouseOver(elementId, false);
+            };
+            var dynamicPanelMouseDown = function(elementId) {
+                var parent = $ax.dynamicPanelManager.parentHandlesStyles(elementId);
+                if(parent) {
+                    dynamicPanelMouseDown(parent.id);
+                    if(parent.direct) return;
+                }
+                _event.mouseDownObjectId = elementId;
+                $ax.dynamicPanelManager.propagateMouseDown(elementId, true);
+            };
+            var dynamicPanelMouseUp = function(elementId) {
+                var parent = $ax.dynamicPanelManager.parentHandlesStyles(elementId);
+                if(parent) {
+                    dynamicPanelMouseUp(parent.id);
+                    if(parent.direct) return;
+                }
+                _event.mouseDownObjectId = '';
+                $ax.dynamicPanelManager.propagateMouseDown(elementId, false);
+            };
+
+            //attach handlers for button shape and tree node mouse over styles
+            // TODO: Can this really be removed? Trees seem to work with out (the generic hover case works for it).
+            //        query.filter(function(obj) {
+            //            return obj.type == 'buttonShape' && obj.parent.type == 'treeNodeObject' &&
+            //                    obj.parent.style && obj.parent.style.stateStyles &&
+            //                        obj.parent.style.stateStyles.mouseOver;
+            //        }).mouseenter(function() {
+            //            $ax.style.SetWidgetHover(this.id, true);
+            //        }).mouseleave(function() {
+            //            $ax.style.SetWidgetHover(this.id, false);
+            //        });
+
+            //handle treeNodeObject events and prevent them from bubbling up. this is necessary because otherwise
+            //both a sub menu and it's parent would get a click
+            if(dObj.type == 'treeNodeObject') {
+                $element.click(function() {
+                    //todo -- this was bubbling, but then selecting a child tree node would bubble and select the parent (don't know if there is a better way)
+                    _fireObjectEvent(this.id, 'click', arguments);
+                    return false;
+                }).each(function() {
+                    if(!this.style.cursor) {
+                        this.style.cursor = 'default';
+                    }
+                });
+            }
+
+            // Synthetic events
+
+            var map = dObj.interactionMap;
+            // Attach dynamic panel synthetic drag and swipe events
+            if(dObj.type == "dynamicPanel" && map && (
+                map.onDragStart || map.onDrag ||
+                    map.onDragDrop || map.onSwipeLeft || map.onSwipeRight || map.onSwipeUp || map.onSwipeDown)) {
+
+                $element.bind($ax.features.eventNames.mouseDownName, function(e) { $ax.drag.StartDragWidget(e.originalEvent, elementId); });
+            }
+
+            // Attach dynamic panel synthetic scroll event
+            if(dObj.type == 'dynamicPanel' && map && map.onScroll) {
+                var diagrams = dObj.diagrams;
+                for(var i = 0; i < diagrams.length; i++) {
+                    var panelId = $ax.repeater.applySuffixToElementId(elementId, '_state' + i);
+                    (function(id) {
+                        _attachDefaultObjectEvent($('#' + id), elementId, 'scroll', function(e) {
+                            $ax.setjBrowserEvent(e);
+                            _handleEvent(elementId, $ax.getEventInfoFromEvent($ax.getjBrowserEvent(), false, elementId), map.onScroll);
+                        });
+                    })(panelId);
+                }
+            }
+
+            // Attach synthetic hover event
+            if (map && map.onMouseHover) {
+                var MIN_HOVER_HOLD_TIME = 1000;
+
+                // So when the timeout fires, you know whether it is the same mouseenter that is active or not.
+                var hoverMouseCount = 0;
+                // Update eventInfo regularly, so position is accurate.
+                var hoverEventInfo;
+
+                $element.mouseenter(function(e) {
+                    $ax.setjBrowserEvent(e);
+                    hoverEventInfo = $ax.getEventInfoFromEvent($ax.getjBrowserEvent(), false, elementId);
+                    (function(currCount) {
+                        window.setTimeout(function() {
+                            if(currCount == hoverMouseCount) _raiseSyntheticEvent(elementId, 'onMouseHover', false, hoverEventInfo, true);
+                        }, MIN_HOVER_HOLD_TIME);
+                    })(hoverMouseCount);
+                }).mouseleave(function(e) {
+                    $ax.setjBrowserEvent(e);
+                    hoverMouseCount++;
+                }).mousemove(function(e) {
+                    $ax.setjBrowserEvent(e);
+                    hoverEventInfo = $ax.getEventInfoFromEvent($ax.getjBrowserEvent(), false, elementId);
+                });
+            }
+
+            // Attach synthetic tap and hold event.
+            if (map && map.onLongClick) {
+                var MIN_LONG_CLICK_HOLD_TIME = 750;
+
+                // So when the timeout fires, you know whether it is the same mousedown that is active or not.
+                var longClickMouseCount = 0;
+
+                $element.bind($ax.features.eventNames.mouseDownName, function(e) {
+                    (function(currCount) {
+                        $ax.setjBrowserEvent(e);
+                        var eventInfo = $ax.getEventInfoFromEvent($ax.getjBrowserEvent(), false, elementId);
+                        window.setTimeout(function() {
+                            if(currCount == longClickMouseCount) _raiseSyntheticEvent(elementId, 'onLongClick', false, eventInfo, true);
+                        }, MIN_LONG_CLICK_HOLD_TIME);
+                        if(e.preventDefault) e.preventDefault();
+                    })(longClickMouseCount);
+                }).bind($ax.features.eventNames.mouseUpName, function(e) {
+                    $ax.setjBrowserEvent(e);
+                    longClickMouseCount++;
+                });
+            };
+
+
+            // Attach synthetic onSelectionChange event to droplist and listbox elements
+            if ($ax.event.HasSelectionChanged(dObj)) {
+                $element.bind('change', function(e) {
+                    $ax.setjBrowserEvent(e);
+                    _raiseSyntheticEvent(elementId, 'onSelectionChange');
+                });
+            };
+
+            // Highjack key up and key down to keep track of state of keyboard.
+            _event.initKeyEvents($element);
+
+            // Attach synthetic onTextChange event to textbox and textarea elements
+            if ($ax.event.HasTextChanged(dObj)) {
+                var element = $jobj($ax.INPUT(elementId));
+                $ax.updateElementText(elementId, element.val());
+                //Key down needed because when holding a key down, key up only fires once, but keydown fires repeatedly.
+                //Key up because last mouse down will only show the state before the last character.
+                element.bind('keydown', function(e) {
+                    $ax.setjBrowserEvent(e);
+                    $ax.event.TryFireTextChanged(elementId);
+                }).bind('keyup', function(e) {
+                    $ax.setjBrowserEvent(e);
+                    $ax.event.TryFireTextChanged(elementId);
+                });
+            };
+
+            // Attach synthetic onCheckedChange event to radiobutton and checkbox elements
+            if (dObj.type == 'checkbox' || dObj.type == 'radioButton') {
+                var input = $jobj($ax.INPUT(elementId));
+                if(dObj.type == 'radioButton' && input.prop('checked')) {
+                    $ax.updateRadioButtonSelected(input.attr('name'), elementId);
+                }
+
+                $element.bind('change', function(e) {
+                    $ax.setjBrowserEvent(e);
+                    _tryFireCheckedChanged(elementId, true);
+                });
+            };
+
+            var hasTap = map && (map.onClick || map.onDoubleClick);
+            var hasMove = map && map.onMouseMove;
+            _event.initMobileEvents(hasTap ? $element : $(),
+                hasMove ? $element : $(), elementId);
+
+
+            //attach link alternate styles
+            if(dObj.type == 'hyperlink') {
+                $element.mouseenter(function() {
+                    var elementId = this.id;
+                    if(_event.mouseOverIds.indexOf(elementId) != -1) return true;
+                    _event.mouseOverIds[_event.mouseOverIds.length] = elementId;
+                    var mouseOverObjectId = _event.mouseOverObjectId;
+                    if(mouseOverObjectId && $ax.style.IsWidgetDisabled(mouseOverObjectId)) return true;
+
+                    $ax.style.SetLinkHover(elementId);
+
+                    var bubble = _fireObjectEvent(elementId, 'mouseenter', arguments);
+
+                    $ax.annotation.updateLinkLocations($ax.style.GetTextIdFromLink(elementId));
+                    return bubble;
+                }).mouseleave(function() {
+                    var elementId = this.id;
+                    $ax.splice(_event.mouseOverIds, _event.mouseOverIds.indexOf(elementId), 1);
+                    var mouseOverObjectId = _event.mouseOverObjectId;
+                    if(mouseOverObjectId && $ax.style.IsWidgetDisabled(mouseOverObjectId)) return true;
+
+                    $ax.style.SetLinkNotHover(elementId);
+
+                    var bubble = _fireObjectEvent(elementId, 'mouseleave', arguments);
+
+                    $ax.annotation.updateLinkLocations($ax.style.GetTextIdFromLink(elementId));
+                    return bubble;
+                }).bind($ax.features.eventNames.mouseDownName, function() {
+                    var elementId = this.id;
+                    var mouseOverObjectId = _event.mouseOverObjectId;
+                    if($ax.style.IsWidgetDisabled(mouseOverObjectId)) return undefined;
+
+                    if(mouseOverObjectId) $ax.style.SetWidgetMouseDown(mouseOverObjectId, true);
+                    $ax.style.SetLinkMouseDown(elementId);
+
+                    $ax.annotation.updateLinkLocations($ax.style.GetTextIdFromLink(elementId));
+
+                    return false;
+                }).bind($ax.features.eventNames.mouseUpName, function() {
+                    var elementId = this.id;
+                    var mouseOverObjectId = _event.mouseOverObjectId;
+                    if(mouseOverObjectId && $ax.style.IsWidgetDisabled(mouseOverObjectId)) return;
+
+                    if(mouseOverObjectId) $ax.style.SetWidgetMouseDown(mouseOverObjectId, false);
+                    $ax.style.SetLinkNotMouseDown(elementId);
+
+                    $ax.annotation.updateLinkLocations($ax.style.GetTextIdFromLink(elementId));
+
+                }).click(function() {
+                    var elementId = this.id;
+                    var mouseOverObjectId = _event.mouseOverObjectId;
+                    if(mouseOverObjectId && $ax.style.IsWidgetDisabled(mouseOverObjectId)) return undefined;
+
+                    return _fireObjectEvent(elementId, 'click', arguments);
+                });
+            }
+
+            // Init inline frames
+            if (dObj.type == 'inlineFrame') {
+                var target = dObj.target;
+                var url = '';
+                if(target.includeVariables && target.url) {
+                    var origSrc = target.url;
+                    url = origSrc.toLowerCase().indexOf('http://') == -1 ? $ax.globalVariableProvider.getLinkUrl(origSrc) : origSrc;
+
+                } else if(target.urlLiteral) {
+                    url = $ax.expr.evaluateExpr(target.urlLiteral, $ax.getEventInfoFromEvent(undefined, true, elementId), true);
+                }
+                if(url) $jobj($ax.INPUT(elementId)).attr('src', url);
+            };
         });
-    };
+    }
     $ax.initializeObjectEvents = _initializeObjectEvents;
 
     // Handle key up and key down events
@@ -1043,55 +1002,49 @@ $axure.internal(function($ax) {
         var tapDownLoc;
         var lastClickEventTime;
 
-        _event.initMobileEvents = function(handleTap, handleMove) {
+        _event.initMobileEvents = function($tapQuery, $moveQuery, elementId) {
             if(!$ax.features.supports.mobile) return;
 
             // Handle touch start
-            handleTap(function(query, elementId) {
-                $(query).bind('touchstart', function(e) {
-                    // We do NOT support multiple touches. This isn't necessarily the touch we want.
-                    var touch = e.originalEvent && e.originalEvent.changedTouches && e.originalEvent.changedTouches[0];
-                    if(!touch) return;
+            $tapQuery.bind('touchstart', function(e) {
+                // We do NOT support multiple touches. This isn't necessarily the touch we want.
+                var touch = e.originalEvent && e.originalEvent.changedTouches && e.originalEvent.changedTouches[0];
+                if(!touch) return;
 
-                    tapDownLoc = [touch.pageX, touch.pageY];
+                tapDownLoc = [touch.pageX, touch.pageY];
+
+                var time = (new Date()).getTime();
+                if(time - lastClickEventTime < DBLCLICK_THRESHOLD_MS) {
+                    var dObj = elementId === '' ? $ax.pageData.page : $ax.getObjectFromElementId(elementId);
+                    var axEventObject = dObj && dObj.interactionMap && dObj.interactionMap['onDoubleClick'];
+                    if(axEventObject) e.preventDefault(); //for Chrome on Android
+                }
+            }).bind('touchend', function(e) {
+                var touch = e.originalEvent && e.originalEvent.changedTouches && e.originalEvent.changedTouches[0];
+                if(!touch || !tapDownLoc) return;
+
+                var tapUpLoc = [touch.pageX, touch.pageY];
+                var xDiff = tapUpLoc[0] - tapDownLoc[0];
+                var yDiff = tapUpLoc[1] - tapDownLoc[1];
+
+                if((xDiff * xDiff + yDiff * yDiff) < CLICK_THRESHOLD_PX_SQ) {
+                    $ax.setjBrowserEvent(e);
+                    _raiseSyntheticEvent(elementId, 'onClick', false, undefined, true);
 
                     var time = (new Date()).getTime();
                     if(time - lastClickEventTime < DBLCLICK_THRESHOLD_MS) {
-                        var dObj = elementId === '' ? $ax.pageData.page : $ax.getObjectFromElementId(elementId);
-                        var axEventObject = dObj && dObj.interactionMap && dObj.interactionMap['onDoubleClick'];
-                        if(axEventObject) e.preventDefault(); //for Chrome on Android
+                        _raiseSyntheticEvent(elementId, 'onDoubleClick', false, undefined, true);
+                        if(e.originalEvent && e.originalEvent.handled) e.preventDefault(); //for iOS
                     }
-                });
-
-                $(query).bind('touchend', function(e) {
-                    var touch = e.originalEvent && e.originalEvent.changedTouches && e.originalEvent.changedTouches[0];
-                    if(!touch || !tapDownLoc) return;
-
-                    var tapUpLoc = [touch.pageX, touch.pageY];
-                    var xDiff = tapUpLoc[0] - tapDownLoc[0];
-                    var yDiff = tapUpLoc[1] - tapDownLoc[1];
-
-                    if((xDiff * xDiff + yDiff * yDiff) < CLICK_THRESHOLD_PX_SQ) {
-                        $ax.setjBrowserEvent(e);
-                        _raiseSyntheticEvent(elementId, 'onClick', false, undefined, true);
-
-                        var time = (new Date()).getTime();
-                        if(time - lastClickEventTime < DBLCLICK_THRESHOLD_MS) {
-                            _raiseSyntheticEvent(elementId, 'onDoubleClick', false, undefined, true);
-                            if(e.originalEvent && e.originalEvent.handled) e.preventDefault(); //for iOS
-                        }
-                        lastClickEventTime = time;
-                    }
-                });
+                    lastClickEventTime = time;
+                }
             });
 
             // Handles touch move
-            handleMove(function(query, elementId) {
-                $(query).bind('touchmove', function(e) {
-                    $ax.setjBrowserEvent(e);
-                    _raiseSyntheticEvent(elementId, 'onMouseMove', false, undefined, true);
-                    if(e.originalEvent && e.originalEvent.handled) e.preventDefault();
-                });
+            $moveQuery.bind('touchmove', function(e) {
+                $ax.setjBrowserEvent(e);
+                _raiseSyntheticEvent(elementId, 'onMouseMove', false, undefined, true);
+                if(e.originalEvent && e.originalEvent.handled) e.preventDefault();
             });
         };
     })();
@@ -1150,12 +1103,12 @@ $axure.internal(function($ax) {
     var _updateMouseLocation = function(e, end) {
         if(!e) return;
 
-        if($.browser.msie && typeof (e.type) == 'unknown') return;
+        if(IE && typeof (e.type) == 'unknown') return;
         if(e.type != 'mousemove' && e.type != 'touchstart' && e.type != 'touchmove' && e.type != 'touchend') return;
 
         var newX;
         var newY;
-        if($.browser.msie) {
+        if(IE) {
             newX = e.clientX + $('html').scrollLeft();
             newY = e.clientY + $('html').scrollTop();
         } else {
@@ -1377,22 +1330,25 @@ $axure.internal(function($ax) {
             //'onResize': [window, 'resize'],
             'onContextMenu': [window, 'contextmenu']
         };
+
+        var $win = $(window);
         if(!$ax.features.supports.mobile) {
             PAGE_AXURE_TO_JQUERY_EVENT_NAMES.onClick = ['html', 'click'];
             PAGE_AXURE_TO_JQUERY_EVENT_NAMES.onDoubleClick = ['html', 'dblclick'];
             PAGE_AXURE_TO_JQUERY_EVENT_NAMES.onMouseMove = ['html', 'mousemove'];
         } else {
-            _event.initMobileEvents(function(initTap) { initTap(window, ''); }, function(initMove) { initMove(window, ''); });
-            $(window).bind($ax.features.eventNames.mouseDownName, _updateMouseLocation);
-            $(window).bind($ax.features.eventNames.mouseUpName, function(e) { _updateMouseLocation(e, true); });
+            _event.initMobileEvents($win, $win, '');
 
-            $(window).scroll(function() { _setCanClick(false); });
-            $(window).bind($ax.features.eventNames.mouseDownName, (function() {
+            $win.bind($ax.features.eventNames.mouseDownName, _updateMouseLocation);
+            $win.bind($ax.features.eventNames.mouseUpName, function(e) { _updateMouseLocation(e, true); });
+
+            $win.scroll(function() { _setCanClick(false); });
+            $win.bind($ax.features.eventNames.mouseDownName, (function() {
                 _setCanClick(true);
             }));
         }
-        $(window).bind($ax.features.eventNames.mouseMoveName, _updateMouseLocation);
-        $(window).scroll($ax.flyoutManager.reregisterAllFlyouts);
+        $win.bind($ax.features.eventNames.mouseMoveName, _updateMouseLocation);
+        $win.scroll($ax.flyoutManager.reregisterAllFlyouts);
 
         for(key in PAGE_AXURE_TO_JQUERY_EVENT_NAMES) {
             if(!PAGE_AXURE_TO_JQUERY_EVENT_NAMES.hasOwnProperty(key)) continue;

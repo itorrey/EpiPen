@@ -44,6 +44,8 @@ $axure.internal(function($ax) {
                 for(var index in userTriggeredEventNames) {
                     if(obj.interactionMap[userTriggeredEventNames[index]]) return true;
                 }
+            } else if (obj.type == 'flowShape' && obj.referencePageUrl) {
+                return true;
             }
             return false;
         }).$();

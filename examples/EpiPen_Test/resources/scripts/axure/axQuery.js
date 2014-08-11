@@ -58,7 +58,7 @@
     };
 
     window.$jobj = function(id) {
-        return $('#' + id);
+        return $(document.getElementById(id));
     };
 
     $ax.INPUT = function(id) { return id + "_input"; };
@@ -222,8 +222,9 @@
                 var parents = [];
                 while(parent) {
                     parents[parents.length] = parent;
-                    // If id is not a valid object, you are either repeater item or dynamic panel state.
-                    //  Either way, get parents id in that case.
+                    // If id is not a valid object, you are either repeater item
+                    if(!$obj(parent)) parent = $jobj(parent).parent().attr('id');
+                    // or dynamic panel state.
                     if(!$obj(parent)) parent = $jobj(parent).parent().attr('id');
                     parent = getParent(parent);
                 }

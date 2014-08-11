@@ -1,7 +1,6 @@
 ﻿body {
   margin:0px;
   background-image:none;
-  touch-action:none;
   position:static;
   left:auto;
   width:326px;
@@ -61,6 +60,28 @@
   left:2px;
   top:17px;
   width:46px;
+  visibility:hidden;
+  word-wrap:break-word;
+}
+#u5 {
+  position:absolute;
+  left:100px;
+  top:220px;
+  width:200px;
+  height:100px;
+}
+#u5_img {
+  position:absolute;
+  left:0px;
+  top:0px;
+  width:200px;
+  height:100px;
+}
+#u6 {
+  position:absolute;
+  left:2px;
+  top:42px;
+  width:196px;
   visibility:hidden;
   word-wrap:break-word;
 }

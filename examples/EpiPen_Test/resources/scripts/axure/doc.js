@@ -185,10 +185,16 @@
 
         var _getElementsIdFromEventAndScriptId = function(eventInfo, scriptId) {
             var itemId = eventInfo && $ax.repeater.getItemIdFromElementId(eventInfo.srcElement);
+            var target = false;
+            // Try to get itemId from target if you can't get it from source.
+            if(!itemId) {
+                itemId = eventInfo && eventInfo.targetElement && $ax.repeater.getItemIdFromElementId(eventInfo.targetElement);
+                if(itemId) target = true;
+            }
 
             var parentRepeater = $ax.getParentRepeaterFromScriptId(scriptId);
             if(parentRepeater && scriptId != parentRepeater) {
-                if(itemId && (!eventInfo || parentRepeater == $ax.getParentRepeaterFromScriptId($ax.repeater.getScriptIdFromElementId(eventInfo.srcElement)))) {
+                if(itemId && (!eventInfo || parentRepeater == $ax.getParentRepeaterFromScriptId($ax.repeater.getScriptIdFromElementId(target ? eventInfo.targetElement : eventInfo.srcElement)))) {
                     return [$ax.repeater.createElementId(scriptId, itemId)];
                 }
                 var elementIds = [];
@@ -214,6 +220,7 @@
         var _getEventInfoFromEvent = function(event, skipShowDescriptions, elementId) {
             var eventInfo = {};
             eventInfo.srcElement = elementId;
+            eventInfo.now = new Date();
 
             if(event != null) {
                 //elementId can be empty string, so can't simple use "or" assignment here.
@@ -222,6 +229,7 @@
 
                 // When getting locations in mobile, need to extract the touch object to get the mouse location attributes
                 var mouseEvent = (event.originalEvent && event.originalEvent.changedTouches && event.originalEvent.changedTouches[0]) || event.originalEvent;
+                if(mouseEvent && !mouseEvent.type) mouseEvent.type = event.type;
 
                 if(skipShowDescriptions) eventInfo.skipShowDescriptions = true;
 
@@ -503,7 +511,7 @@
                 } else if(to.target == "parentFrame") {
                     targetLocation = parent.location;
                 } else if(to.target == "frame") {
-//                    targetLocation = to.frame.contentWindow.location;
+                    //                    targetLocation = to.frame.contentWindow.location;
                     $(to.frame).attr('src', targetUrl || 'about:blank');
                     return;
                 }

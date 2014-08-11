@@ -13,6 +13,17 @@ $axure.internal(function($ax) {
     };
 
     var isEqual = function(left, right) {
+        if(left instanceof Date && right instanceof Date) {
+            if(left.getMilliseconds() != right.getMilliseconds()) return false;
+            if(left.getSeconds() != right.getSeconds()) return false;
+            if(left.getMinutes() != right.getMinutes()) return false;
+            if(left.getHours() != right.getHours()) return false;
+            if(left.getDate() != right.getDate()) return false;
+            if(left.getMonth() != right.getMonth()) return false;
+            if(left.getYear() != right.getYear()) return false;
+            return true;
+        }
+
         if(left instanceof Object && right instanceof Object) {
             var prop;
             // Go through all of lefts properties and compare them to rights.
@@ -414,7 +425,17 @@ $axure.internal(function($ax) {
     _exprFunctions.GetWidgetRectangles = function(elementId, eventInfo) {
         var rects = new Object();
         var jObj = $jobj(elementId);
-        if(jObj.length == 0) {
+        var invalid = jObj.length == 0;
+        var parent = jObj;
+        // Or are in valid if no obj can be found, or if it is not visible.
+        while(parent.length != 0 && !parent.is('body')) {
+            if(parent.css('display') == 'none') {
+                invalid = true;
+                break;
+            }
+            parent = parent.parent();
+        }
+        if(invalid) {
             rects.lastRect = rects.currentRect = new $ax.drag.Rectangle(-1, -1, -1, -1);
             return rects;
         }
@@ -461,7 +482,7 @@ $axure.internal(function($ax) {
 
     _exprFunctions.ToString = function(value) {
         if(value.isWidget) {
-            return value.Text;
+            return value.text;
         }
         return String(value);
     };
