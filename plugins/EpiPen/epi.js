@@ -21,8 +21,8 @@ epi = {
                 if(target == "inline") {
                     tag = document.createElement("style");
                     if(src.substring(0,2) == "[[") {
-                        tag.innerHTML = $axure.getGlobalVariable(src.slice(1, -1));
-                        console.log($axure.getGlobalVariable('css'));
+                        //This doesn't currently work. Always getting undefined.
+                        tag.innerHTML = $axure.getGlobalVariable(src.slice(2, -2));
                     } else {
                         tag.innerHTML = src;
                     }
@@ -76,8 +76,6 @@ epi = {
 };
 
 (function () {
-    epi.init();
-
     $axure.internal(function($ax){
         //Fix for axure's bug where this function doesn't return anything.
         $ax.public.getGlobalVariable = $ax.getGlobalVariable = function(name) {
@@ -103,5 +101,6 @@ epi = {
             }
         };
     });
+    epi.init();
 })();
 
