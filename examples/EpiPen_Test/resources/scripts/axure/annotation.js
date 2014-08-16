@@ -73,7 +73,7 @@ $axure.internal(function($ax) {
         else left = sourceLeft - 6;
 
         $ax.globals.MaxZIndex = $ax.globals.MaxZIndex + 1;
-        if(IE) height += 50;
+        if($.browser.msie) height += 50;
 
         var dObj = $ax.getObjectFromElementId(id);
         var ann = dObj.annotation;

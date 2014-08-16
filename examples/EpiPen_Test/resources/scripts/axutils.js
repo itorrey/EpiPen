@@ -194,7 +194,6 @@
          // Use original is some cases
          if (search instanceof RegExp) return original.apply(this, arguments);
 
-         search = String(search);
          var searchCompare = ignoreCase ? this.toLowerCase() : this;
          if (ignoreCase) search = search.toLowerCase();
 
@@ -223,19 +222,19 @@
          Array.prototype.indexOf = function (elt /*, from*/) {
              var len = this.length >>> 0;
 
-             var from = trunc(Number(arguments[1]) || 0);
-             if(from < 0) from += len;
+             var from = Number(arguments[1]) || 0;
+             from = (from < 0)
+         ? Math.ceil(from)
+         : Math.floor(from);
+             if (from < 0)
+                 from += len;
 
-             for(; from < len; from++) {
-                 if(from in this && this[from] === elt) return from;
+             for (; from < len; from++) {
+                 if (from in this &&
+          this[from] === elt)
+                     return from;
              }
              return -1;
          };
      }
-
-     var trunc = function(num) {
-         return num < 0 ? Math.ceil(num) : Math.floor(num);
-     };
-
-
  })();

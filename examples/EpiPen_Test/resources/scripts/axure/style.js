@@ -302,17 +302,10 @@
         return _style.IsWidgetDisabled(id) ? DISABLED : _generateSelectedState(id, _style.IsWidgetSelected(id));
     };
 
-    var _progressState = _style.progessState = function(state) {
+    var _progessState = _style.progessState = function(state) {
         if(state == NORMAL) return false;
         if(state == MOUSE_DOWN) return MOUSE_OVER;
         return NORMAL;
-    };
-
-    var _unprogressState = function(state, goal) {
-        state = state || NORMAL;
-        if(state == goal) return undefined;
-        if(state == NORMAL && goal == MOUSE_DOWN) return MOUSE_OVER;
-        return goal;
     };
 
     var _updateElementIdImageStyle = _style.updateElementIdImageStyle = function(elementId, state) {
@@ -324,7 +317,7 @@
         var style = obj.style;
         var stateStyle = state == NORMAL ? style : style && style.stateStyles && style.stateStyles[state];
         if(!stateStyle && !_style.getElementImageOverride(elementId, state)) {
-            state = _progressState(state);
+            state = _progessState(state);
             if(state) _updateElementIdImageStyle(elementId, state);
             return;
         }
@@ -406,7 +399,7 @@
     //        function (item) { return item.indexOf(id) < 0; })[0]; // that are not similar to the parent
     //}
 
-    var _getButtonShapeId = function(id) {
+    var _getButtonShapeId = function (id) {
         var obj = $obj(id);
         return obj.type == 'treeNodeObject' ? $ax.getElementIdFromPath([obj.buttonShapeId], { relativeTo: id }) : id;
     };
@@ -530,14 +523,14 @@
         }
 
         var isHyperlink = Boolean(parentId);
-        var currState = NORMAL;
-        while(currState) {
+        var currState = state;
+        while(state) {
             if(isHyperlink && (currState == MOUSE_DOWN || currState == MOUSE_OVER)) {
                 var key = currState == MOUSE_OVER ? 'hyperlinkMouseOver' : 'hyperlinkMouseDown';
                 $.extend(computedStyle, $ax.document.stylesheet.defaultStyles[key]);
             }
             $.extend(computedStyle, _computeStateStyleForViewChain(diagramObject, currState, viewIdChain, true));
-            currState = _unprogressState(currState, state);
+            state = _progessState(state);
         }
 
         return _removeUnsupportedProperties(computedStyle, diagramObject.type);
@@ -656,7 +649,7 @@
             imgQuery[0].onload = function() {
                 _updateClass();
                 // IE 8 can't set onload to undefined
-                if(IE && BROWSER_VERSION <= 8) imgQuery[0].onload = function() { };
+                if($.browser.msie && $.browser.version <= 8) imgQuery[0].onload = function() { };
                 else imgQuery[0].onload = undefined;
             };
         } else {
@@ -811,7 +804,7 @@
         _adaptiveStyledWidgets[$ax.repeater.getScriptIdFromElementId(shapeId)] = style;
 
         var textId = $ax.style.GetTextIdFromShape(shapeId);
-        if(textId) _applyTextStyle(textId, style);
+        _applyTextStyle(textId, style);
 
         // removing this for now
         //        if(style.location) {
@@ -850,8 +843,9 @@
     };
 
     var _getCssShadow = function(shadow) {
-        return !shadow.on ? "none"
-            : shadow.offsetX + "px " + shadow.offsetY + "px " + shadow.blurRadius + "px " + _getCssColor(shadow.color);
+        return shadow.on
+            ? shadow.offsetX + "px " + shadow.offsetY + "px " + shadow.blurRadius + "px " + _getCssColor(shadow.color)
+            : "";
     };
 
     var _getCssStyleProperties = function(style) {
@@ -871,7 +865,10 @@
         }
         if(style.horizontalAlignment) toApply.parProps.textAlign = style.horizontalAlignment;
         if(style.lineSpacing) toApply.parProps.lineHeight = style.lineSpacing;
-        if(style.textShadow) toApply.parProps.textShadow = _getCssShadow(style.textShadow);
+        if(style.textShadow) {
+            var cssShadow = _getCssShadow(style.textShadow);
+            toApply.parProps.textShadow = cssShadow; // we need this dumb hyphe
+        }
 
         return toApply;
     };

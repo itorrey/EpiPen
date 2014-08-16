@@ -34,10 +34,6 @@ $axure.internal(function($ax) {
             if(repeater != rdoRepeater || item != rdoItem) return;
 
             if(obj.type == 'referenceDiagramObject') _model.idsInRdo(elementId, elementIds);
-            // Kind of complicated, but returning for isContained objects, hyperlinks, tabel cell, non-root tree nodes, and images in the tree.
-            else if(obj.isContained || obj.type == 'hyperlink' || obj.type == 'tableCell' ||
-                (obj.type == 'treeNodeObject' && !$jobj(elementId).hasClass('treeroot')) ||
-                (obj.type == 'imageBox' && obj.parent.type == 'treeNodeObject')) return;
             else elementIds.push(elementId);
         });
         return elementIds;

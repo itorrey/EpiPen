@@ -18,24 +18,38 @@ epi = {
         if(!target) { target = "head"; }
         switch(type) {
             case "css":
-                tag = document.createElement("link");
-                tag.href = src;
+                if(target == "inline") {
+                    tag = document.createElement("style");
+                    if(src.substring(0,2) == "[[") {
+                        tag.innerHTML = $axure.getGlobalVariable(src.slice(1, -1));
+                        console.log($axure.getGlobalVariable('css'));
+                    } else {
+                        tag.innerHTML = src;
+                    }
+                } else {
+                    tag = document.createElement("link");
+                    tag.href = src;
+                }
                 tag.type = "text/css";
                 tag.rel = "stylesheet";
                 break;
 
             case "js":
                 tag = document.createElement("script");
-                tag.src = src;
+                if(target == "inline") {
+                    tag.innerHTML = src;
+                } else {
+                    tag.src = src;
+                }
                 break;
 
             case "html":
                 tag = document.createDocumentFragment(src);
                 break;
+
         }
         if(target.substring(0,1) == "@") {
             $axure(target).$()[0].innerHTML = src;
-
         } else {
             var head = document.getElementsByTagName("head")[0];
             head.appendChild(tag);

@@ -4,7 +4,7 @@
   touch-action:none;
   position:static;
   left:auto;
-  width:300px;
+  width:740px;
   margin-left:0;
   margin-right:0;
   text-align:left;
@@ -15,26 +15,46 @@
 }
 #u0 {
   position:absolute;
-  left:41px;
-  top:40px;
-  width:259px;
-  height:37px;
+  left:0px;
+  top:0px;
+  width:740px;
+  height:250px;
+  overflow:hidden;
 }
-#u0_img {
+#u0_state0 {
   position:absolute;
   left:0px;
   top:0px;
-  width:259px;
-  height:37px;
+  width:740px;
+  height:250px;
+  -ms-overflow-x:hidden;
+  overflow-x:hidden;
+  -ms-overflow-y:hidden;
+  overflow-y:hidden;
+  background-image:none;
+}
+#u0_state0_content {
+  position:absolute;
+  left:0px;
+  top:0px;
+  width:1px;
+  height:1px;
 }
 #u1 {
   position:absolute;
   left:0px;
   top:0px;
-  width:259px;
-  white-space:nowrap;
+  width:50px;
+  height:100px;
 }
-#u2 {
+.u2 {
+  position:absolute;
+  left:0px;
+  top:0px;
+  width:50px;
+  height:50px;
+}
+.u2_img {
   position:absolute;
   left:0px;
   top:0px;
@@ -42,20 +62,6 @@
   height:50px;
 }
 .u3 {
-  position:absolute;
-  left:0px;
-  top:0px;
-  width:50px;
-  height:50px;
-}
-.u3_img {
-  position:absolute;
-  left:0px;
-  top:0px;
-  width:50px;
-  height:50px;
-}
-.u4 {
   position:absolute;
   left:2px;
   top:17px;

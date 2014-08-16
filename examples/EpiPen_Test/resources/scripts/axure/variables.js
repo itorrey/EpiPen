@@ -42,7 +42,7 @@ $axure.internal(function($ax) {
         switch(variable) {
             case "pagename": return $ax.pageData.page.name;
 
-            case "now": return eventInfo.now;
+            case "now": return new Date();
             case "gendate": return $ax.pageData.generationDate;
 
             case "dragx": return $ax.drag.GetDragX();
@@ -52,7 +52,6 @@ $axure.internal(function($ax) {
             case "dragtime": return $ax.drag.GetDragTime();
 
             case "math": return Math;
-            case "date": return Date;
 
             case "window": return eventInfo && eventInfo.window;
             case "this": return eventInfo && eventInfo.thiswidget;

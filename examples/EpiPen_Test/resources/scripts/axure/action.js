@@ -30,15 +30,14 @@
         if(func) func();
     };
 
-    var _refreshing = [];
-    _action.refreshStart = function(repeaterId) { _refreshing.push(repeaterId); };
-    _action.refreshEnd = function() { _refreshing.pop(); };
+    var _refreshing;
+    _action.refreshStart = function(repeaterId) { _refreshing = repeaterId; };
+    _action.refreshEnd = function() { _refreshing = undefined; };
 
     // TODO: [ben] Consider moving this to repeater.js
     var _repeatersToRefresh = _action.repeatersToRefresh = [];
     var _ignoreAction = function(repeaterId) {
-        for(var i = 0; i < _refreshing.length; i++) if(_refreshing[i] == repeaterId) return true;
-        return false;
+        return _refreshing == repeaterId;
     };
 
     var _addRefresh = function(repeaterId) {
@@ -57,7 +56,6 @@
         var action = actions[index];
         var infoCopy = $ax.eventCopy(eventInfo);
         window.setTimeout(function() {
-            infoCopy.now = new Date();
             _dispatchAction(infoCopy, actions, index + 1);
         }, action.waitTime);
     };
@@ -174,25 +172,22 @@
                             eventInfo.targetElement = elementId;
                             var stateName = $ax.expr.evaluateExpr(stateInfo.stateValue, eventInfo);
                             eventInfo.targetElement = oldTarget;
-
-                            // Try for state name first
-                            var states = $ax.getObjectFromElementId(elementId).diagrams;
-                            var stateNameFound = false;
-                            for(var k = 0; k < states.length; k++) {
-                                if(states[k].label == stateName) {
-                                    stateNumber = k + 1;
-                                    stateNameFound = true;
+                            stateNumber = Number(stateName);
+                            var panelCount = $('#' + elementId).children().length;
+                            // If not number, or too low or high, try to get it as a name rather than id
+                            if(isNaN(stateNumber) || stateNumber <= 0 || stateNumber > panelCount) {
+                                var states = $ax.getObjectFromElementId(elementId).diagrams;
+                                var stateNameFound = false;
+                                for(var k = 0; k < states.length; k++) {
+                                    if(states[k].label == stateName) {
+                                        stateNumber = k + 1;
+                                        stateNameFound = true;
+                                    }
                                 }
-                            }
-
-                            // Now check for index
-                            if(!stateNameFound) {
-                                stateNumber = Number(stateName);
-                                var panelCount = $('#' + elementId).children().length;
-
-                                // Make sure number is not NaN, is in range, and is a whole number.
-                                // Wasn't a state name or number, so return
-                                if(isNaN(stateNumber) || stateNumber <= 0 || stateNumber > panelCount || Math.round(stateNumber) != stateNumber) return $ax.action.fireAnimationFromQueue(elementId);
+                                // Wasn't a state number, or a state name, so return
+                                if(!stateNameFound) {
+                                    return $ax.action.fireAnimationFromQueue(elementId);
+                                }
                             }
                         } else if(stateInfo.setStateType == 'next' || stateInfo.setStateType == 'previous') {
                             var info = $ax.deepCopy(stateInfo);
@@ -775,7 +770,7 @@
     _actionHandlers.other = function(eventInfo, actions, index) {
         var action = actions[index];
         $ax.navigate({
-            url: $axure.utils.getOtherPath() + "#other=" + encodeURI(action.otherDescription),
+            url: $axure.utils.getOtherPath() + "#other=" + encodeURI(action.description),
             target: "popup",
             includeVariables: false,
             popupOptions: action.popup

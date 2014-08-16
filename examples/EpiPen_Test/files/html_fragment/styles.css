@@ -1,6 +1,7 @@
 ﻿body {
   margin:0px;
   background-image:none;
+  touch-action:none;
   position:static;
   left:auto;
   width:720px;
