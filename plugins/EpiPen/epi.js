@@ -5,6 +5,9 @@ epi = {
     inject: function() {
         $axure('@EpiPen').each(function(index, value){
             $(index.data).each(function(index, value) {
+                if(!value.type) {
+                    return;
+                }
                 var type = value.type.text;
                 var src = value.src.text;
                 var target = value.target.text;
