@@ -107,6 +107,7 @@ epi = {
         epi.repeater = $ax.repeater;
         epi.deepCopy = $ax.deepCopy;
         epi.repeaterToCurrentDataSet = $ax.repeaterToCurrentDataSet;
+        epi.repeaterToLocalDataSet = $ax.repeaterToLocalDataSet;
         epi.action = $ax.action;
         epi.event = $ax.event;
 

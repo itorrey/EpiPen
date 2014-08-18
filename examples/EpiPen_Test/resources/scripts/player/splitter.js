@@ -79,7 +79,7 @@ $.fn.splitter = function(args){
          B.css(opts.origin, newPos+bar._DA)
             .css(opts.split, splitter._DA-bar._DA-newPos).css(opts.fixed,  splitter._DF);
          // IE fires resize for us; all others pay cash
-         if ( !$.browser.msie )
+         if ( !IE )
             panes.trigger("resize");
       }
       function dimSum(jq, dims) {
@@ -188,10 +188,10 @@ $.fn.splitter = function(args){
             var top = splitter.offset().top;
             var wh = $(window).height();
             splitter.css("height", Math.max(wh-top-splitter._hadjust, splitter._hmin)+"px");
-            if ( !$.browser.msie ) splitter.trigger("resize");
+            if ( !IE ) splitter.trigger("resize");
          }).trigger("resize");
       }
-      else if ( opts.resizeToWidth && !$.browser.msie )
+      else if ( opts.resizeToWidth && !IE )
          $(window).bind("resize", function(){
             splitter.trigger("resize");
          });

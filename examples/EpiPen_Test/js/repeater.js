@@ -1,10 +1,10 @@
-function dumpRepeater(target) {
-	$axure(target).each(function(index, value){
-	    $(index.data).each(function(index, value) {
-	    	console.log(value);
-	    });
-	});
-}
+var masterRepeaterLabel = 'repeater';
+
+var masterRepeater = {
+	label: masterRepeaterLabel,
+	obj: getRepeater(masterRepeaterLabel),
+	id: $axure('@'+masterRepeaterLabel).getElementIds()[0]
+};
 
 function getRepeater(repeaterLabel) {
 	var theRepeater;
@@ -18,32 +18,22 @@ function getRepeater(repeaterLabel) {
 	return theRepeater;
 }
 
-function getRepeaterDataSet(repeaterLabel) {
-	var repeaterRef = getRepeater(repeaterLabel);
-	return epi.deepCopy(repeaterRef.data);
-}
-
 function setRepeaterDataSet(targetRepeater, sourceRepeater) {
-
 	var target = getRepeater(targetRepeater);
 	var source = getRepeater(sourceRepeater);
 	var targetId = $axure('@'+targetRepeater).getElementIds()[0];
 	var sourceId = $axure('@'+sourceRepeater).getElementIds()[0];
 	epi.repeater.setDataSet(targetId, sourceId);
 	epi.repeater.refreshRepeater(targetId);
-	myDataSet = getRepeaterDataSet('repeater');
+	target.data = source.data;
+	console.log(target);
 }
 
-var masterData = getRepeater('repeater');
-
-var myDataSet = getRepeaterDataSet('repeater');
-setRepeaterDataSet('repeater2', 'repeater');
-
-watch(masterData, doWatched, 1, true);
-
-function doWatched() {
-	console.log('watched');
-}
+setRepeaterDataSet('repeater2', masterRepeater.label);
 
 
-
+watch(epi.action, "repeatersToRefresh", function(event, item, targetId) {
+	if(targetId[0] == masterRepeater.id) {
+		setRepeaterDataSet('repeater2', 'repeater');
+	}
+});

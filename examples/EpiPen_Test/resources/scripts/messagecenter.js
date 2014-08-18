@@ -9,6 +9,8 @@ var WEBKIT = false;
 var OS_MAC = false;
 var IOS = false;
 
+var IE = false;
+var BROWSER_VERSION = 5000;
 (function () {
     var chromeRegex = /Chrome\/([0-9]+).([0-9]+)/g ;
     var chromeMatch = chromeRegex.exec(window.navigator.userAgent);
@@ -24,6 +26,11 @@ var IOS = false;
     OS_MAC = Boolean(macRegex.exec(window.navigator.platform));
 
     IOS = navigator.userAgent.match( /iPhone/i ) || navigator.userAgent.match( /iPad/i ) || navigator.userAgent.match( /iPod/i );
+
+    if($.browser) {
+        IE = $.browser.msie;
+        BROWSER_VERSION = $.browser.version;
+    }
 })();
 
 (function() {

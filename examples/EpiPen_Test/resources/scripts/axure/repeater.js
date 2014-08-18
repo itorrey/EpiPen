@@ -61,6 +61,13 @@ $axure.internal(function($ax) {
     _repeaterManager.setDataSet = _setRepeaterDataSet;
 
     var _refreshRepeater = function(repeaterId, eventInfo) {
+        // Don't show if you have a parent rdos thats limboed.
+        var rdoPath = $ax.getPathFromScriptId(repeaterId);
+        while(rdoPath.length > 1) {
+            $ax.splice(rdoPath, rdoPath.length - 1, 1);
+            if($obj($ax.getScriptIdFromPath(rdoPath)).style.limbo) return;
+        }
+
         _loaded[repeaterId] = true;
         $ax.action.refreshStart(repeaterId);
         $ax.style.ClearCacheForRepeater(repeaterId);
@@ -433,7 +440,7 @@ $axure.internal(function($ax) {
 
                     //If tied, go to tie breaker
                     if(text1 == text2) {
-                        if(compare) return compare(row1, row2); 
+                        if(compare) return compare(row1, row2);
                         // Actually a tie.
                         return 0;
                     }
@@ -612,7 +619,7 @@ $axure.internal(function($ax) {
 
         var dataSet = repeaterToActiveDataSet[repeaterId];
         if(!dataSet) dataSet = repeaterToCurrentDataSet[repeaterId];
-        var lastPage = Math.ceil(dataSet.length / pageInfo.itemsPerPage);
+        var lastPage = Math.max(1, Math.ceil(dataSet.length / pageInfo.itemsPerPage));
 
         if(type == 'Value') {
             var val = Number($ax.expr.evaluateExpr(value, eventInfo));
@@ -713,13 +720,14 @@ $axure.internal(function($ax) {
         else if(type == 'marked') items = repeaterToEditItems[repeaterId];
         else {
             // This should be rule
-            var visibleData = repeaterToActiveDataSet[repeaterId];
+            var visibleData = repeaterToCurrentDataSet[repeaterId];
             var items = [];
             var oldTarget = eventInfo.targetElement;
             for(var i = 0; i < visibleData.length; i++) {
-                eventInfo.targetElement = _createElementId(repeaterId, visibleData[i].index);
+                var index = i + 1;
+                eventInfo.targetElement = _createElementId(repeaterId, index);
                 if($ax.expr.evaluateExpr(rule, eventInfo).toLowerCase() != 'true') continue;
-                items.push(visibleData[i].index);
+                items.push(index);
             }
             eventInfo.targetElement = oldTarget;
         }
@@ -744,13 +752,14 @@ $axure.internal(function($ax) {
         else if(type == 'marked') items = repeaterToEditItems[repeaterId];
         else {
             // This should be rule
-            var visibleData = repeaterToActiveDataSet[repeaterId];
+            var currData = repeaterToCurrentDataSet[repeaterId];
             var items = [];
             var oldTarget = eventInfo.targetElement;
-            for(var i = 0; i < visibleData.length; i++) {
-                eventInfo.targetElement = _createElementId(repeaterId, visibleData[i].index);
+            for(var i = 0; i < currData.length; i++) {
+                var index = i + 1;
+                eventInfo.targetElement = _createElementId(repeaterId, index);
                 if($ax.expr.evaluateExpr(rule, eventInfo).toLowerCase() != 'true') continue;
-                items.push(visibleData[i].index);
+                items.push(index);
             }
             eventInfo.targetElement = oldTarget;
         }
@@ -764,6 +773,7 @@ $axure.internal(function($ax) {
                 if(data.type == 'literal') {
                     eventInfo.targetElement = _createElementId(repeaterId, item);
                     data = $ax.expr.evaluateExpr(data.literal, eventInfo);
+                    if(typeof (data) == 'object' && data.isWidget) data = data.text;
                     if(typeof (data) == 'string') data = { type: 'text', text: data };
                 }
                 dataSet[item - 1][prop] = data;
@@ -1408,6 +1418,10 @@ $axure.internal(function($ax) {
         var children = $(parent ? '#' + parent : '#base').children();
         for(var i = 0; i < children.length; i++) {
             var child = $(children[i]);
+
+            // Check for basic links
+            if(child[0] && child[0].tagName == 'A' && child.hasClass('basiclink')) child = child.children();
+
             var childId = child.attr('id');
             // Don't move self, and check id to make sure it is a widget.
             if(childId == id || !childId || childId[0] != 'u') continue;

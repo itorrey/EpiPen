@@ -1,7 +1,6 @@
 ﻿body {
   margin:0px;
   background-image:none;
-  touch-action:none;
   position:static;
   left:auto;
   width:700px;
@@ -183,4 +182,25 @@
   top:0px;
   width:63px;
   white-space:nowrap;
+}
+#u17 {
+  position:absolute;
+  left:290px;
+  top:80px;
+  width:100px;
+  height:30px;
+}
+#u17_img {
+  position:absolute;
+  left:0px;
+  top:0px;
+  width:100px;
+  height:30px;
+}
+#u18 {
+  position:absolute;
+  left:2px;
+  top:8px;
+  width:96px;
+  word-wrap:break-word;
 }

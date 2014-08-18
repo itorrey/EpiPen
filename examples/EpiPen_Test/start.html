@@ -100,7 +100,7 @@
                 $(window).resize();
                 resizeContent();
                 //wait for ie to get to a good state and resize
-                if($.browser.msie && $.browser.version == "6.0") setTimeout(function() { $('#outerContainer').trigger('resize'); }, 30);
+                if(IE && BROWSER_VERSION == "6.0") setTimeout(function() { $('#outerContainer').trigger('resize'); }, 30);
 
                 if($axure.player.settings.startCollapsed) {
                     collapse();

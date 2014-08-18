@@ -13,7 +13,7 @@
 
         var x, y;
         var tg;
-        if($.browser.msie) {
+        if(IE) {
             x = window.event.clientX + window.document.documentElement.scrollLeft + window.document.body.scrollLeft;
             y = window.event.clientY + window.document.documentElement.scrollTop + window.document.body.scrollTop;
             tg = window.event.srcElement;
@@ -42,9 +42,14 @@
         widgetDragInfo.startTime = (new Date()).getTime();
         widgetDragInfo.targetWidget = tg;
 
-        if($.browser.msie) {
-            window.document.attachEvent($ax.features.eventNames.mouseDownName, _dragWidget);
-            window.document.attachEvent($ax.features.eventNames.mouseUpName, _stopDragWidget);
+        if(IE) {
+            if($ax.features.supports.windowsMobile) {
+                window.document.attachEvent($ax.features.eventNames.mouseDownName, _dragWidget);
+                window.document.attachEvent($ax.features.eventNames.mouseUpName, _stopDragWidget);
+            } else {
+                window.document.attachEvent('on' + $ax.features.eventNames.mouseMoveName, _dragWidget);
+                window.document.attachEvent('on' + $ax.features.eventNames.mouseUpName, _stopDragWidget);
+            }
         } else {
             window.document.addEventListener($ax.features.eventNames.mouseMoveName, _dragWidget, true);
             window.document.addEventListener($ax.features.eventNames.mouseUpName, _stopDragWidget, true);
@@ -56,7 +61,7 @@
         $ax.setjBrowserEvent(jQuery.Event(event));
 
         var x, y;
-        if($.browser.msie) {
+        if(IE) {
             x = window.event.clientX + window.document.documentElement.scrollLeft + window.document.body.scrollLeft;
             y = window.event.clientY + window.document.documentElement.scrollTop + window.document.body.scrollTop;
         } else {
@@ -103,12 +108,12 @@
 
     var _suppressClickAfterDrag = function(event) {
         _removeSuppressEvents();
-        
+
         $ax.legacy.SuppressBubble(event);
     };
 
     var _removeSuppressEvents = function() {
-        if($.browser.msie) {
+        if(IE) {
             window.event.srcElement.detachEvent("onclick", _suppressClickAfterDrag);
             widgetDragInfo.targetWidget.detachEvent("onmousemove", _removeSuppressEvents);
         } else {
@@ -121,9 +126,15 @@
         $ax.setjBrowserEvent(jQuery.Event(event));
 
         var tg;
-        if($.browser.msie) {
-            window.document.detachEvent($ax.features.eventNames.mouseDownName, _dragWidget);
-            window.document.detachEvent($ax.features.eventNames.mouseUpName, _stopDragWidget);
+        if(IE) {
+            if($ax.features.supports.windowsMobile) {
+                window.document.detachEvent($ax.features.eventNames.mouseDownName, _dragWidget);
+                window.document.detachEvent($ax.features.eventNames.mouseUpName, _stopDragWidget);
+
+            } else {
+                window.document.detachEvent('on' + $ax.features.eventNames.mouseMoveName, _dragWidget);
+                window.document.detachEvent('on' + $ax.features.eventNames.mouseUpName, _stopDragWidget);
+            }
             tg = window.event.srcElement;
         } else {
             window.document.removeEventListener($ax.features.eventNames.mouseMoveName, _dragWidget, true);
@@ -154,17 +165,18 @@
 
             window.document.body.style.cursor = widgetDragInfo.oldBodyCursor;
             var widget = window.document.getElementById(widgetDragInfo.widgetId);
-            widget.style.cursor = widgetDragInfo.oldCursor;
+            // It may be null if OnDragDrop filtered out the widget
+            if(widget != null) widget.style.cursor = widgetDragInfo.oldCursor;
 
             if(widgetDragInfo.targetWidget == tg && !event.changedTouches) {
                 // suppress the click after the drag on desktop browsers
-                if($.browser.msie && widgetDragInfo.targetWidget) {
+                if(IE && widgetDragInfo.targetWidget) {
                     widgetDragInfo.targetWidget.attachEvent("onclick", _suppressClickAfterDrag);
                 } else {
                     window.document.addEventListener("click", _suppressClickAfterDrag, true);
                 }
 
-                if($.browser.msie && widgetDragInfo.targetWidget) {
+                if(IE && widgetDragInfo.targetWidget) {
                     widgetDragInfo.targetWidget.attachEvent("onmousemove", _removeSuppressEvents);
                 } else {
                     window.document.addEventListener("mousemove", _removeSuppressEvents, true);
@@ -262,11 +274,17 @@
     };
 
     Rectangle.prototype.IntersectsWith = function(rect) {
+        if(this.Invalid()) return false;
         if(rect.length) {
-            for(var i = 0; i < rect.length; i++) if(this.IntersectsWith(rect[i])) return true;
+            for(var i = 0; i < rect.length; i++) if(!rect[i].Invalid && this.IntersectsWith(rect[i])) return true;
             return false;
         }
+        if(rect.Invalid()) return false;
         return this.x < rect.right && this.right > rect.x && this.y < rect.bottom && this.bottom > rect.y;
+    };
+
+    Rectangle.prototype.Invalid = function() {
+        return this.x == -1 && this.y == -1 && this.width == -1 && this.height == -1;
     };
 
     Rectangle.prototype.Move = function(x, y) {
