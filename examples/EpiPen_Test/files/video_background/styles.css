@@ -1,7 +1,6 @@
 ﻿body {
   margin:0px;
   background-image:none;
-  touch-action:none;
   position:static;
   left:auto;
   width:740px;
@@ -13,7 +12,7 @@
   position:absolute;
   z-index:0;
 }
-#u0 {
+#u34 {
   position:absolute;
   left:0px;
   top:0px;
@@ -21,7 +20,7 @@
   height:250px;
   overflow:hidden;
 }
-#u0_state0 {
+#u34_state0 {
   position:absolute;
   left:0px;
   top:0px;
@@ -33,39 +32,57 @@
   overflow-y:hidden;
   background-image:none;
 }
-#u0_state0_content {
+#u34_state0_content {
   position:absolute;
   left:0px;
   top:0px;
   width:1px;
   height:1px;
 }
-#u1 {
-  position:absolute;
-  left:0px;
-  top:0px;
-  width:50px;
-  height:100px;
-}
-.u2 {
+.u36_img {
   position:absolute;
   left:0px;
   top:0px;
   width:50px;
   height:50px;
 }
-.u2_img {
+.u36 {
   position:absolute;
   left:0px;
   top:0px;
   width:50px;
   height:50px;
 }
-.u3 {
+.u37 {
   position:absolute;
   left:2px;
   top:17px;
   width:46px;
   visibility:hidden;
   word-wrap:break-word;
+}
+#u35-1 {
+  position:absolute;
+  left:0px;
+  top:0px;
+  width:50px;
+  height:50px;
+}
+#u35-2 {
+  position:absolute;
+  left:0px;
+  top:50px;
+  width:50px;
+  height:50px;
+}
+#u35 {
+  position:absolute;
+  left:0px;
+  top:0px;
+  width:50px;
+  height:100px;
+  background:inherit;
+  background-color:rgba(255, 255, 255, 0);
+  border:none;
+  border-radius:0px;
 }

@@ -1,6 +1,8 @@
 ﻿// ******* SITEMAP TOOLBAR VIEWER ACTIONS ******** //
-$axure.internal(function($ax) {
-    var userTriggeredEventNames = ['onClick', 'onDoubleClick', 'onMouseOver', 'onMouseMove', 'onMouseOut', 'onMouseDown', 'onMouseUp', 'onKeyDown', 'onKeyUp', 'onFocus', 'onLostFocus', 'onTextChange', 'onSelectionChange', 'onCheckedChange', 'onSwipeLeft', 'onSwipeRight', 'onSwipeUp', 'onSwipeDown', 'onDragStart', 'onDrag', 'onDragDrop', 'onScroll', 'onContextMenu', 'onMouseHover', 'onLongClick'];
+$axure.internal(function ($ax) {
+    var userTriggeredEventNames = ['onClick', 'onDoubleClick', 'onMouseOver', 'onMouseMove', 'onMouseOut', 'onMouseDown', 'onMouseUp',
+        'onKeyDown', 'onKeyUp', 'onFocus', 'onLostFocus', 'onTextChange', 'onSelectionChange', 'onSelectedChange', 'onSelect', 'onUnselect',
+        'onSwipeLeft', 'onSwipeRight', 'onSwipeUp', 'onSwipeDown', 'onDragStart', 'onDrag', 'onDragDrop', 'onScroll', 'onContextMenu', 'onMouseHover', 'onLongClick'];
 
     $ax.messageCenter.addMessageListener(function(message, data) {
         //If annotation toggle message received from sitemap, toggle footnotes
@@ -14,6 +16,22 @@ $axure.internal(function($ax) {
                 $('div.annnotelabel').hide();
                 $('div.annnoteimage').hide();
             }
+        }
+    });
+
+    var lastSelectedWidgetNote;
+    $ax.messageCenter.addMessageListener(function (message, data) {
+        //If annotation toggle message received from sitemap, toggle footnotes
+        if(message == 'toggleSelectWidgetNote') {
+            if(lastSelectedWidgetNote == data) {
+                $('#' + lastSelectedWidgetNote).removeClass('widgetNoteSelected');
+                lastSelectedWidgetNote = null;
+                return;
+            }
+
+            if(lastSelectedWidgetNote) $('#' + lastSelectedWidgetNote).removeClass('widgetNoteSelected');
+            $('#' + data).addClass('widgetNoteSelected');
+            lastSelectedWidgetNote = data;
         }
     });
 
@@ -36,7 +54,7 @@ $axure.internal(function($ax) {
                 userAgentString.indexOf('msie 7.') != -1 ||
                 userAgentString.indexOf('msie 6.') != -1;
 
-        var pulsateClassName = isIEpre10 ? 'legacyPulsateBorder' : 'pulsateBorder';
+        var pulsateClassName = 'legacyPulsateBorder';
 
         //Find all widgets with a defined userTriggeredEventName specified in the array above
         var $matchingElements = query.filter(function(obj) {
@@ -44,6 +62,8 @@ $axure.internal(function($ax) {
                 for(var index in userTriggeredEventNames) {
                     if(obj.interactionMap[userTriggeredEventNames[index]]) return true;
                 }
+            } else if ($ax.public.fn.IsVector(obj.type) && obj.referencePageUrl) {
+                return true;
             }
             return false;
         }).$();
