@@ -12,6 +12,7 @@ epi = {
                 var src = element.src.text;
                 var target = element.target.text;
                 epi.createTag(type, src, target);
+                epi.addAttribute(type, src, target);
             });
         });
     },
@@ -58,6 +59,16 @@ epi = {
             head.appendChild(tag);
         }
     },
+
+    addAttribute: function(type, src, target) {
+        switch(type) {
+            case "class":
+                if(target.substring(0,1) == "@") {
+                    var selector=target.substring(1);
+                    $("[data-label=selector").addClass(src);
+                };
+        }    
+    }
 
     //Listen for changes to epi variable from Axure.
     listen: function() {

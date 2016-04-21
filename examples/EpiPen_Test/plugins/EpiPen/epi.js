@@ -3,14 +3,14 @@ epi = {
 
     // Get the data inside the EpiInjector object and create tags from it.
     inject: function() {
-        $axure('@EpiPen').each(function(index, element){
-            $(index.data).each(function(index, element) {
-                if(!element.type) {
+        $axure('@EpiPen').each(function(index, value){
+            $(index.data).each(function(index, value) {
+                if(!value.type) {
                     return;
                 }
-                var type = element.type.text;
-                var src = element.src.text;
-                var target = element.target.text;
+                var type = value.type.text;
+                var src = value.src.text;
+                var target = value.target.text;
                 epi.createTag(type, src, target);
             });
         });
