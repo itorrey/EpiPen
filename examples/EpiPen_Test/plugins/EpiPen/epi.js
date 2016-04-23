@@ -3,19 +3,90 @@ epi = {
 
     // Get the data inside the EpiInjector object and create tags from it.
     inject: function() {
-        $axure('@EpiPen').each(function(index, value){
-            $(index.data).each(function(index, value) {
-                if(!value.type) {
+        $axure('@EpiPen').each(function(index, element){
+            $(index.data).each(function(index, element) {
+                if(!element.type) {
                     return;
                 }
-                var type = value.type.text;
-                var src = value.src.text;
-                var target = value.target.text;
-                epi.createTag(type, src, target);
+                var type = element.type.text;
+                var src = element.src.text;
+                var target = element.target.text;
+                // epi.createTag(type, src, target);
+                epi.injectCode(type, src, target);
             });
         });
     },
 
+    inputAlert: function(input) {
+        output = "Please check the input value of " + input + "!";
+        alert(output);
+    },
+
+    injectCode: function(type, src, target) {
+        var tag;
+
+        if(!type) {epi.inputAlert("type");}
+
+        if(!src) {
+            epi.inputAlert("src");
+        } else if(src.substring(0,2) === "[[") {
+            src = $axure.getGlobalVariable(src.slice(2, -2));
+        }
+
+        if(target.substring(0,1) === "@") { 
+            
+            var data_label = target.substring(1);
+            var selector = "[data-label=" + "'" + data_label +"']";
+            tag = document.querySelector(selector);
+            if(!tag) {
+                epi.inputAlert("target");
+            }
+        }
+
+        switch(type) {
+            case "css":
+                if(target === "internal") {
+                    tag = document.createElement("style");
+                    tag.innerHTML = src;
+                } else if(target === "external") {
+                    tag = document.createElement("link");
+                    tag.href = src;
+                    tag.type = "text/css";
+                    tag.rel = "stylesheet";
+                } else {
+                    tag.setAttribute("style", src);
+                }
+                break;
+
+            case "js":
+                tag = document.createElement("script");
+                if(target === "internal") {
+                    tag.innerHTML = src;
+                } else if(target === "external") {
+                    tag.src = src;
+                } else {
+                    epi.inputAlert("target");
+                }
+                break;
+
+            case "html":
+                tag.innerHTML = src;
+                break;
+
+            case "class":
+                var tag_class = tag.className;
+                blank = (tag_class != '') ? ' ' : '';
+                tag.className = tag_class + blank + src;
+                break;
+        }
+
+        if(target === "internal" || target === "external") {
+            var head = document.getElementsByTagName("head")[0];
+            head.appendChild(tag);
+        }
+    },
+    
+    /*
     createTag: function(type, src, target) {
         var tag;
         if(!target) { target = "head"; }
@@ -47,17 +118,20 @@ epi = {
                 break;
 
             case "html":
-                tag = document.createDocumentFragment(src);
+                // tag = document.createDocumentFragment(src);
+                console.log(tag);
                 break;
 
         }
         if(target.substring(0,1) == "@") {
+            console.log($axure(target).$()[0]);
             $axure(target).$()[0].innerHTML = src;
         } else {
             var head = document.getElementsByTagName("head")[0];
             head.appendChild(tag);
         }
     },
+    */
 
     //Listen for changes to epi variable from Axure.
     listen: function() {
