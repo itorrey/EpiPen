@@ -18,11 +18,11 @@ EpiPen
 
 This is the type of content you'll be injecting
 
-**src: js/myScript.js**
+**src: js / myScript.js**
 
 This is either a relative or absolute URL to your script or css. If your type was HTML, an HTML string is valid here.
 
-**target: external / internal/@widgetName**
+**target: external / internal / @widgetName**
 
 This tells the epi.js script where to insert your content. In most cases you want to specify head however you can also replace the contents of a widget when you set the type to HTML. Just specify the widget ID (with the @ symbol first) and that widget will be replaced with the string passed in the src field.
 
