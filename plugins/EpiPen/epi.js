@@ -8,10 +8,18 @@ epi = {
                 if(!element.type) {
                     return;
                 }
+                
+                // If the value of attr_name is null, TypeError will occur.
+                if(!element.attr_name) {
+                    element.attr_name = "blank";
+                }
+                
+                console.log(element);
                 var type = element.type.text;
                 var src = element.src.text;
                 var target = element.target.text;
-                epi.injectCode(type, src, target);
+                var attr_name = element.attr_name.text;
+                epi.injectCode(type, src, target, attr_name);
             });
         });
     },
@@ -21,10 +29,8 @@ epi = {
         alert(output);
     },
 
-    injectCode: function(type, src, target) {
+    injectCode: function(type, src, target, attr_name) {
         var tag;
-
-        if(!type) {epi.inputAlert("type");}
 
         if(!src) {
             epi.inputAlert("src");
@@ -53,7 +59,7 @@ epi = {
                     tag.type = "text/css";
                     tag.rel = "stylesheet";
                 } else {
-                    tag.setAttribute("style", src);
+                    epi.inputAlert("target");
                 }
                 break;
 
@@ -77,6 +83,10 @@ epi = {
                 blank = (tag_class != '') ? ' ' : '';
                 tag.className = tag_class + blank + src;
                 break;
+
+            case "attr":
+                console.log(attr_name + src);
+                tag.setAttribute(attr_name, src);
         }
 
         if(target === "internal" || target === "external") {
