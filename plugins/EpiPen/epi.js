@@ -11,7 +11,6 @@ epi = {
                 var type = element.type.text;
                 var src = element.src.text;
                 var target = element.target.text;
-                // epi.createTag(type, src, target);
                 epi.injectCode(type, src, target);
             });
         });
@@ -85,53 +84,6 @@ epi = {
             head.appendChild(tag);
         }
     },
-    
-    /*
-    createTag: function(type, src, target) {
-        var tag;
-        if(!target) { target = "head"; }
-        switch(type) {
-            case "css":
-                if(target == "inline") {
-                    tag = document.createElement("style");
-                    if(src.substring(0,2) == "[[") {
-                        //This doesn't currently work. Always getting undefined.
-                        tag.innerHTML = $axure.getGlobalVariable(src.slice(2, -2));
-                    } else {
-                        tag.innerHTML = src;
-                    }
-                } else {
-                    tag = document.createElement("link");
-                    tag.href = src;
-                }
-                tag.type = "text/css";
-                tag.rel = "stylesheet";
-                break;
-
-            case "js":
-                tag = document.createElement("script");
-                if(target == "inline") {
-                    tag.innerHTML = src;
-                } else {
-                    tag.src = src;
-                }
-                break;
-
-            case "html":
-                // tag = document.createDocumentFragment(src);
-                console.log(tag);
-                break;
-
-        }
-        if(target.substring(0,1) == "@") {
-            console.log($axure(target).$()[0]);
-            $axure(target).$()[0].innerHTML = src;
-        } else {
-            var head = document.getElementsByTagName("head")[0];
-            head.appendChild(tag);
-        }
-    },
-    */
 
     //Listen for changes to epi variable from Axure.
     listen: function() {
