@@ -14,15 +14,19 @@ EpiPen
 ### Usage
 #### Repeater Dataset Values
 
-**type: js / css / html / class**
+**type: js / css / html / class / attr**
 
 This is the type of content you'll be injecting
 
-**src: js / myScript.js**
+**src: myScript.js / myStyle.css / html / [[variable]]**
 
-This is either a relative or absolute URL to your script or css. If your type was HTML, an HTML string is valid here.
+This is either a relative or absolute URL to your script or css. If your type was HTML, an HTML string is valid here. Variable can be custom variables embedded in your Axure files.
 
 **target: external / internal / @widgetName**
 
-This tells the epi.js script where to insert your content. In most cases you want to specify head however you can also replace the contents of a widget when you set the type to HTML. Just specify the widget ID (with the @ symbol first) and that widget will be replaced with the string passed in the src field.
+This tells the epi.js script where to insert your content. In most cases you want to specify external however you can also replace the contents of a widget when you set the type to html/class/attribute. Just specify the widget ID (with the @ symbol first) and that widget will be changed with the string passed in the src field.
+
+**attr_name: [[attribute name]]**
+
+This is required only when you select the type "attr", It will be easily setting attribute for widgets. 
 
