@@ -84,7 +84,6 @@ epi = {
                 break;
 
             case "attr":
-                console.log(attr_name + src);
                 tag.setAttribute(attr_name, src);
         }
 
