@@ -14,7 +14,6 @@ epi = {
                     element.attr_name = "blank";
                 }
                 
-                console.log(element);
                 var type = element.type.text;
                 var src = element.src.text;
                 var target = element.target.text;
