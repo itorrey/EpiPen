@@ -1,4 +1,4 @@
-EpiPen
+AxureInjector
 ===
 
 ### Inject your own JS, CSS or HTML strings into Axure.
