@@ -1,7 +1,6 @@
 ﻿body {
   margin:0px;
   background-image:none;
-  touch-action:none;
   position:static;
   left:auto;
   width:326px;
@@ -13,7 +12,22 @@
   position:absolute;
   z-index:0;
 }
-#u0 {
+#u18_div {
+  position:absolute;
+  left:0px;
+  top:0px;
+  width:285px;
+  height:37px;
+  background:inherit;
+  background-color:rgba(255, 255, 255, 0);
+  border:none;
+  border-radius:0px;
+  -moz-box-shadow:none;
+  -webkit-box-shadow:none;
+  box-shadow:none;
+  color:#330099;
+}
+#u18 {
   position:absolute;
   left:41px;
   top:40px;
@@ -21,46 +35,50 @@
   height:37px;
   color:#330099;
 }
-#u0_img {
-  position:absolute;
-  left:0px;
-  top:0px;
-  width:285px;
-  height:37px;
-}
-#u1 {
+#u19 {
   position:absolute;
   left:0px;
   top:0px;
   width:285px;
   white-space:nowrap;
 }
-#u2 {
+.u21_img {
   position:absolute;
   left:0px;
   top:0px;
   width:50px;
   height:50px;
 }
-.u3 {
+.u21 {
   position:absolute;
   left:0px;
   top:0px;
   width:50px;
   height:50px;
 }
-.u3_img {
-  position:absolute;
-  left:0px;
-  top:0px;
-  width:50px;
-  height:50px;
-}
-.u4 {
+.u22 {
   position:absolute;
   left:2px;
   top:17px;
   width:46px;
   visibility:hidden;
   word-wrap:break-word;
+}
+#u20-1 {
+  position:absolute;
+  left:0px;
+  top:0px;
+  width:50px;
+  height:50px;
+}
+#u20 {
+  position:absolute;
+  left:0px;
+  top:0px;
+  width:50px;
+  height:50px;
+  background:inherit;
+  background-color:rgba(255, 255, 255, 0);
+  border:none;
+  border-radius:0px;
 }

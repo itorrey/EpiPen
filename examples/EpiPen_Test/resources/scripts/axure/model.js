@@ -9,14 +9,12 @@ $axure.internal(function($ax) {
 
     var _model = $ax.model = {};
 
-    _model.idsInRdo = function(rdoId, elementIds) {
+    _model.idsInRdo = function(rdoId, scriptIds) {
         var rdoScriptId = $ax.repeater.getScriptIdFromElementId(rdoId);
-        var rdoObj = $obj(rdoId);
         var path = $ax.getPathFromScriptId(rdoScriptId);
         var rdoRepeater = $ax.getParentRepeaterFromScriptId(rdoScriptId);
-        var rdoItem = $ax.repeater.getItemIdFromElementId(rdoId);
 
-        if(!elementIds) elementIds = [];
+        if(!scriptIds) scriptIds = [];
         $ax('*').each(function(obj, elementId) {
             // Make sure in same rdo
             var scriptId = $ax.repeater.getScriptIdFromElementId(elementId);
@@ -30,13 +28,17 @@ $axure.internal(function($ax) {
             if(obj.parentDynamicPanel) return;
 
             var repeater = $ax.getParentRepeaterFromScriptId(scriptId);
-            var item = $ax.repeater.getItemIdFromElementId(elementId);
-            if(repeater != rdoRepeater || item != rdoItem) return;
+            if(repeater != rdoRepeater) return;
 
-            if(obj.type == 'referenceDiagramObject') _model.idsInRdo(elementId, elementIds);
-            else elementIds.push(elementId);
+            if($ax.public.fn.IsReferenceDiagramObject(obj.type)) _model.idsInRdo(scriptId, scriptIds);
+            else if(scriptIds.indexOf(scriptId) != -1) return;
+            // Kind of complicated, but returning for isContained objects, hyperlinks, tabel cell, non-root tree nodes, and images in the tree.
+            else if (obj.isContained || obj.type == 'hyperlink' || $ax.public.fn.IsTableCell(obj.type) ||
+                ($ax.public.fn.IsTreeNodeObject(obj.type) && !$jobj(elementId).hasClass('treeroot')) ||
+                ($ax.public.fn.IsImageBox(obj.type) && $ax.public.fn.IsTreeNodeObject(obj.parent.type))) return;
+            else scriptIds.push(scriptId);
         });
-        return elementIds;
+        return scriptIds;
     };
 
 });

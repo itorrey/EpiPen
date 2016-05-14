@@ -2,13 +2,13 @@
 // ******* Internet Explorer MANAGER ******** //
 //this is to handle all the stupid IE Stuff
 $axure.internal(function($ax) {
-    if(!$.browser.msie) return;
+    if(!IE_10_AND_BELOW) return;
 
     var _ieColorManager = {};
-    if(Number($.browser.version) < 9) $ax.ieColorManager = _ieColorManager;
+    if(Number(BROWSER_VERSION) < 9) $ax.ieColorManager = _ieColorManager;
 
     var _applyIEFixedPosition = function() {
-        if(Number($.browser.version) >= 7) return;
+        if(Number(BROWSER_VERSION) >= 7) return;
 
         $axure(function(diagramObject) { return diagramObject.fixedVertical; }).$()
             .appendTo($('body'))
@@ -26,8 +26,9 @@ $axure.internal(function($ax) {
                     var newLeft = 0;
                     var newTop = 0;
                     var elementQuery = $('#' + elementId);
-                    var width = elementQuery.width();
-                    var height = elementQuery.height();
+                    var elementAxQuery = $ax('#' + elementId);
+                    var width = elementAxQuery.width();
+                    var height = elementAxQuery.height();
 
                     var horz = diagramObject.fixedHorizontal;
                     if(horz == 'left') {
@@ -56,7 +57,7 @@ $axure.internal(function($ax) {
     };
 
     var _applyBackground = function() {
-        if(Number($.browser.version) >= 9) return;
+        if(Number(BROWSER_VERSION) >= 9) return;
 
         var styleChain = $ax.adaptive.getAdaptiveIdChain($ax.adaptive.currentViewId);
         var argb = _getArgb($ax.pageData.page, styleChain);
@@ -67,11 +68,11 @@ $axure.internal(function($ax) {
     };
 
     var _applyBackgroundToQuery = function(query) {
-        if(Number($.browser.version) >= 9) return;
+        if(Number(BROWSER_VERSION) >= 9) return;
 
         var styleChain = $ax.adaptive.getAdaptiveIdChain($ax.adaptive.currentViewId);
         query.each(function(obj, elementId) {
-            if(obj.type == 'dynamicPanel') {
+            if ($ax.public.fn.IsDynamicPanel(obj.type)) {
                 var stateCount = obj.diagrams.length;
                 for(var j = 0; j < stateCount; j++) {
                     var stateId = $ax.repeater.applySuffixToElementId(elementId, '_state' + j);
@@ -79,7 +80,7 @@ $axure.internal(function($ax) {
                     var hexColor = _getHexColor(argb, true);
                     if(hexColor) $jobj(stateId).css('background-color', hexColor);
                 }
-            } else if(obj.type == 'repeater') {
+            } else if ($ax.public.fn.IsRepeater(obj.type)) {
 
             }
         });
@@ -114,7 +115,7 @@ $axure.internal(function($ax) {
     };
 
     var _getColorFromArgb = function(a, r, g, b, allowWhite) {
-        if(Number($.browser.version) >= 9) return undefined;
+        if(Number(BROWSER_VERSION) >= 9) return undefined;
 
         //convert the color with alpha to a color with no alpha (assuming white background)
         r = Math.min((r * a) / 255 + 255 - a, 255);
@@ -162,7 +163,7 @@ $axure.internal(function($ax) {
     };
 
     var _applyIERotation = function() {
-        if(Number($.browser.version) >= 9) return;
+        if(Number(BROWSER_VERSION) >= 9) return;
 
         $axure(function(diagramObject) {
             return ((diagramObject.style.rotation && Math.abs(diagramObject.style.rotation) > 0.1)
@@ -171,16 +172,18 @@ $axure.internal(function($ax) {
         }).each(function(diagramObject, elementId) {
             var rotation = diagramObject.style.rotation || 0;
             var $element = $('#' + elementId);
-            var width = $element.width();
-            var height = $element.height();
+            var axElement = $ax('#' + elementId);
+            var width = axElement.width();
+            var height = axElement.height();
             var originX = width / 2;
             var originY = height / 2;
 
             var shapeIeOffset;
             $element.children().each(function() {
                 var $child = $(this);
-                var childWidth = $child.width();
-                var childHeight = $child.height() + $child.position().top;
+                var axChild = $ax('#' + $child.attr('id'));
+                var childWidth = axChild.width();
+                var childHeight = axChild.height() + $child.position().top;
                 var centerX = $child.position().left + (childWidth / 2);
                 var centerY = $child.position().top + (childHeight / 2);
                 var deltaX = centerX - originX;
@@ -215,7 +218,7 @@ $axure.internal(function($ax) {
     };
 
     var _fixIEStretchBackground = function() {
-        if(Number($.browser.version) >= 9) return;
+        if(Number(BROWSER_VERSION) >= 9) return;
         var pageStyle = $ax.adaptive.getPageStyle();
         if(!pageStyle.imageRepeat || pageStyle.imageRepeat == 'auto') return;
 
@@ -230,7 +233,7 @@ $axure.internal(function($ax) {
     };
 
     var _resizeIEBackground = function() {
-        if(Number($.browser.version) >= 9) return;
+        if(Number(BROWSER_VERSION) >= 9) return;
         //var page = $ax.pageData.page;
         var viewId = $ax.adaptive.currentViewId;
         var pageStyle = $ax.adaptive.getPageStyle();
@@ -288,23 +291,25 @@ $axure.internal(function($ax) {
     };
 
     var _fixInputSize = function() {
-        if(Number($.browser.version) >= 8 || window.navigator.userAgent.indexOf("Trident/4.0") > -1) return;
+        if(Number(BROWSER_VERSION) >= 8 || window.navigator.userAgent.indexOf("Trident/4.0") > -1) return;
         var inputs = $('input').not(':input[type=button], :input[type=submit], :input[type=radio], :input[type=checkbox]');
         inputs.each(function() {
             var $input = $(this);
-            $input.css('height', ($input.height() - 4 + 'px')).css('width', ($input.width() - 2 + 'px'));
+            var axInput = $ax('#' + $input.attr('id'));
+            $input.css('height', (axInput.height() - 4 + 'px')).css('width', (axInput.width() - 2 + 'px'));
         });
 
-        var textAreas = $('textarea');
+        var textAreas = $($ax.constants.TEXT_AREA_TYPE);
         textAreas.each(function() {
             var $textArea = $(this);
-            $textArea.css('height', ($textArea.height() - 6 + 'px')).css('width', ($textArea.width() - 6 + 'px'));
+            var axText = $ax('#' + $textArea.attr('id'));
+            $textArea.css('height', (axText.height() - 6 + 'px')).css('width', (axText.width() - 6 + 'px'));
         });
     };
 
     var _fixInputBackground = function() {
         var inputs = $('input').not(':input[type=button], :input[type=submit], :input[type=radio], :input[type=checkbox]');
-        inputs = inputs.add($('textarea'));
+        inputs = inputs.add($($ax.constants.TEXT_AREA_TYPE));
         inputs.each(function() {
             var $input = $(this);
             if($input.css('background-color') == 'transparent') {
